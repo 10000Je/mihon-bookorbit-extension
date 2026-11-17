@@ -6,7 +6,15 @@
 
 ## 설치와 연결
 
-1. 생성된 **`artifacts/bookorbit-independent-1.6.1-release.apk`**를 Android 8.0 이상에 설치합니다. 패키지는 `app.bookorbit.mihonext`입니다. 확장 자체는 실행 아이콘이 없는 APK입니다.
+Mihon의 **더보기 → 설정 → 탐색 → 확장 스토어**에서 다음 주소를 추가하면 확장 목록에서 설치하고 이후 업데이트를 확인할 수 있습니다. 메뉴 이름은 Mihon 버전에 따라 다를 수 있습니다.
+
+```text
+https://10000je.github.io/mihon-bookorbit-extension/repo.json
+```
+
+공식 Mihon v0.21.3의 JSON 스토어 형식을 사용합니다. 구형 `index.min.json` 방식은 제공하지 않습니다. 이 저장소에는 이 독립 확장 하나만 등록되어 있습니다.
+
+1. [GitHub Releases](https://github.com/10000Je/mihon-bookorbit-extension/releases/latest)의 **`bookorbit-independent-1.6.1-release.apk`**를 Android 8.0 이상에 설치하거나 위 스토어를 통해 설치합니다. 패키지는 `app.bookorbit.mihonext`입니다. 확장 자체는 실행 아이콘이 없는 APK입니다.
 2. **tachiyomix 1.6 API를 지원하는 Mihon**에서 `탐색 → 확장`으로 이동해 `BookOrbit Independent`를 신뢰 승인합니다. 서명 지문은 검증 기록에 있습니다. 구형 1.4 전용 Mihon은 지원하지 않습니다.
 3. `탐색 → 소스`에 표시되는 `BookOrbit · 슬롯 1`의 설정을 엽니다.
 4. **서버 URL → 읽기 전용 API 키 → 연결 확인 / 라이브러리 재검색 → 라이브러리 선택 / 적용** 순서로 설정합니다. 서버 주소는 HTTPS 기본 주소이며 `/api/v1`은 붙이지 않습니다. 예: `https://books.example.com/` 또는 `https://books.example.com/orbit/`.
@@ -32,7 +40,7 @@ JDK 17 또는 21, Android SDK Platform 36 / Build Tools 36.0.0을 설치하고 `
 ./gradlew :app:assembleRelease :app:lintDebug
 ```
 
-기본 release는 개인 키가 없으면 unsigned입니다. 설치 가능한 release를 만들려면 저장소 밖의 signing properties 파일을 지정합니다. **이 작업에서 생성한 로컬 키로 서명된 release APK는 이미 artifacts에 있습니다.** 키를 Git에 넣지 않습니다.
+기본 release는 개인 키가 없으면 unsigned입니다. 설치 가능한 release를 만들려면 저장소 밖의 signing properties 파일을 지정합니다. 배포용 서명 APK는 [GitHub Releases](https://github.com/10000Je/mihon-bookorbit-extension/releases/latest)에서 받습니다. 로컬 `artifacts/`는 Git에서 제외되므로 소스를 clone하면 생성되어 있지 않습니다. 키를 Git에 넣지 않습니다.
 
 ```sh
 BOOKORBIT_SIGNING_PROPERTIES=/absolute/private/release-signing.properties \
@@ -50,5 +58,6 @@ ANDROID_HOME=/absolute/android-sdk ./scripts/verify-apk.sh
 - `app/src/test/`: 형식·기록 식별자·페이지네이션·HTTPS 프로토콜·선택적 실제 서버 테스트.
 - [API 계약과 버전](docs/API_DISCOVERY.md), [완료 기준](docs/ACCEPTANCE_TESTS.md), [검증 결과와 제한](docs/VERIFICATION.md).
 - [공식 출처와 라이선스](docs/REFERENCES.md), `NOTICE`, `LICENSE`.
+- [GitHub Release·Pages 배포와 업데이트 절차](docs/GITHUB_PUBLISHING.md), [1.6.1 릴리스 노트](docs/RELEASE_NOTES.md).
 
 BookOrbit는 외부 클라이언트의 공개 API 호환성을 보장하지 않습니다. 검증한 서버 버전 밖에서는 엔드포인트·DTO 차이가 있을 수 있으며 명시적 오류로 안내합니다. 이 저장소에는 BookOrbit 서버 구현이나 기존 확장 소스가 포함되지 않습니다.

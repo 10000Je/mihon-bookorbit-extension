@@ -58,7 +58,7 @@ ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
   artifacts/bookorbit-independent-1.6.1-release.apk
 ```
 
-확장에는 Activity가 없으므로 Android 앱 서랍에서 실행하지 않습니다. Mihon에서 확장을 신뢰 승인한 후 소스 설정을 엽니다. 외부 저장소/서버에 추가 저장소 URL을 등록하는 작업은 필요하지 않습니다.
+확장에는 Activity가 없으므로 Android 앱 서랍에서 실행하지 않습니다. Mihon에서 확장을 신뢰 승인한 후 소스 설정을 엽니다. APK 직접 설치가 가능하며, 스토어에서 설치·업데이트하려면 `https://10000je.github.io/mihon-bookorbit-extension/repo.json`을 Mihon 확장 스토어에 추가합니다. BookOrbit 서버 설정은 변경하지 않습니다. [GitHub 배포 절차](GITHUB_PUBLISHING.md)를 참고하세요.
 
 ## 선택적 실서버 테스트
 

@@ -98,4 +98,4 @@ APK에서 Manifest의 `tachiyomi.extension` 기능, `tachiyomix.extensionLib=1.6
 - `app/src/test/`, `experiments/`, `scripts/`: 30개 시험, 캐시 팩토리 프로브, APK 검증 도구.
 - README와 docs를 실제 구현·지원 버전·시험 결과로 갱신했다. LICENSE/NOTICE에 독립 코드와 외부 출처를 명시했다.
 
-Git을 새로 초기화하여 main 브랜치에서 초기 규칙/스타터, 구현, 호스트 호환성 수정·검증 문서를 단계별로 커밋했다. APK·SDK·캐시·실제 자격 증명·개인 서명 키는 추적하지 않는다. 원격 저장소 추가나 외부 푸시는 하지 않았다.
+Git을 새로 초기화하여 main 브랜치에서 초기 규칙/스타터, 구현, 호스트 호환성 수정·검증 문서를 단계별로 커밋했다. APK·SDK·캐시·실제 자격 증명·개인 서명 키는 추적하지 않는다. 초기 구현 검증 당시 원격 저장소 추가나 외부 푸시는 하지 않았다. 후속 GitHub 배포 내용은 [배포 기록](GITHUB_PUBLISHING.md)에 별도로 기록한다.

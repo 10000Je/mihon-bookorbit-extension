@@ -15,3 +15,8 @@ artifacts/
 *.hprof
 *.p12
 *.pem
+*.pfx
+*.key
+*signing*.properties
+_site/
+release-assets/

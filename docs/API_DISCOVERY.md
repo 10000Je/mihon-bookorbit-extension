@@ -4,6 +4,7 @@
 
 ## 고정한 공식 소스
 
+- **확장 스토어 배포 계약:** Mihon v0.21.3 커밋 `feadad5e1e2bf638be6e2ca317d11657b09d4596`의 `data/src/main/java/mihon/data/extension/model/NetworkExtensionStore.kt`, `NetworkLegacyExtensionRepo.kt`, `service/ExtensionStoreService.kt`에서 현대 JSON 스토어 필드와 APK URL·서명 지문 처리 경로를 확인했다. [정확한 경로와 배포 검증](GITHUB_PUBLISHING.md)에 기록했다.
 - **실제 연동 시험 서버: BookOrbit v3.8.0**, 커밋 [`450c18e2acf79ddd39b6dee022a523281448e5e6`](https://github.com/bookorbit/bookorbit/tree/450c18e2acf79ddd39b6dee022a523281448e5e6). 공식 이미지 `ghcr.io/bookorbit/bookorbit:3.8.0`, 이미지 digest `sha256:d318f7732f6f6330312e2c5f854f7899f858b54cc4b18a13cde1f43b5bea0515`. 이미지 revision 라벨과 태그 커밋을 대조했다.
 - 추가 조사: BookOrbit main `c77966cc529423e993fae8a298aa77048b43bba2`. 아래 핵심 DTO/만화/쿼리 계약은 v3.8.0과 대조했다. book.controller.ts의 변경은 사용하지 않는 다른 동작이며 표지·상세 GET은 실서버로 확인했다.
 - **컴파일 API: tachiyomix 1.6.0**, 커밋 [`4e1ff5957ae025dc8c9e900cb5d23f9ace5bbadb`](https://github.com/mihonapp/tachiyomix/tree/4e1ff5957ae025dc8c9e900cb5d23f9ace5bbadb). README의 `:1.6` 좌표는 실제 JitPack에서 404였고, 공식 태그 `:1.6.0`은 POM/AAR 다운로드 및 빌드 성공. Manifest의 API 레벨 값은 여전히 `1.6`이다.

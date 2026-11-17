@@ -1,0 +1,76 @@
+{
+  "name": "BookOrbit Independent for Mihon",
+  "badgeLabel": "BookOrbit",
+  "signingKey": "bf3c650b87f278df0f01ecb458345f7a1c231a5f7634a29a2274da63cf0b1b10",
+  "contact": {
+    "website": "https://github.com/10000Je/mihon-bookorbit-extension",
+    "discord": null
+  },
+  "extensionList": {
+    "extensions": [
+      {
+        "name": "BookOrbit Independent",
+        "packageName": "app.bookorbit.mihonext",
+        "resources": {
+          "apkUrl": "https://github.com/10000Je/mihon-bookorbit-extension/releases/download/v1.6.1/bookorbit-independent-1.6.1-release.apk",
+          "iconUrl": "https://10000je.github.io/mihon-bookorbit-extension/icon.png"
+        },
+        "extensionLib": "1.6",
+        "versionCode": 1,
+        "versionName": "1.6.1",
+        "contentWarning": "UNSPECIFIED",
+        "sources": [
+          {
+            "id": 641300700001,
+            "name": "BookOrbit · 슬롯 1",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          },
+          {
+            "id": 641300700002,
+            "name": "BookOrbit · 슬롯 2",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          },
+          {
+            "id": 641300700003,
+            "name": "BookOrbit · 슬롯 3",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          },
+          {
+            "id": 641300700004,
+            "name": "BookOrbit · 슬롯 4",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          },
+          {
+            "id": 641300700005,
+            "name": "BookOrbit · 슬롯 5",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          },
+          {
+            "id": 641300700006,
+            "name": "BookOrbit · 슬롯 6",
+            "language": "all",
+            "homeUrl": "",
+            "mirrorUrls": [],
+            "message": null
+          }
+        ]
+      }
+    ]
+  },
+  "extensionListUrl": null
+}
