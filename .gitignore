@@ -1,4 +1,5 @@
 .gradle/
+.kotlin/
 .idea/
 .gradle-user-home/
 **/build/
@@ -10,3 +11,7 @@ local.properties
 .env.*
 *.log
 .DS_Store
+artifacts/
+*.hprof
+*.p12
+*.pem
