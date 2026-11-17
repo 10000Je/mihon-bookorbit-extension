@@ -20,7 +20,7 @@ Mihon에 추가할 주소: <https://10000je.github.io/mihon-bookorbit-extension/
 
 `scripts/generate-repo.py`는 실제 APK의 v2 서명과 `repo/signing-key.sha256`의 공개 인증서 지문을 비교한다. 다른 키·debug 키, 잘못된 패키지, 태그/버전 불일치는 거부한다. versionCode/versionName/API 레벨은 APK에서, 슬롯 ID/개수/언어는 해당 태그의 코드에서 읽는다. 실패하면 새 JSON을 작성하지 않는다.
 
-`.github/workflows/pages.yml`은 Release 발행 또는 수동 실행 시 APK를 내려받아 다시 검증하고 `_site/`를 Pages에 배포한다. 서명 개인 키·비밀번호·BookOrbit 접속 정보는 GitHub에 업로드하지 않는다. Actions에는 기본 읽기 토큰과 Pages 배포 권한만 사용한다. 사용한 공식 GitHub Actions는 커밋 SHA로 고정했다.
+`.github/workflows/pages.yml`은 Release 발행 또는 수동 실행 시 APK를 내려받아 다시 검증하고 `_site/`를 Pages에 배포한다. 배포 도구는 main에서, 슬롯 정보는 별도로 checkout한 정확한 release 태그에서 읽으므로 과거 태그를 수정하지 않고도 배포 도구를 고칠 수 있다. 서명 개인 키·비밀번호·BookOrbit 접속 정보는 GitHub에 업로드하지 않는다. Actions에는 기본 읽기 토큰과 Pages 배포 권한만 사용한다. 사용한 공식 GitHub Actions는 커밋 SHA로 고정했다.
 
 GitHub 저장소의 Pages source는 **GitHub Actions** (`build_type=workflow`)로 설정한다. 최초 배포 후에는 GitHub Release 발행이 자동 갱신을 시작한다. Pages 작업이 실패하면 기존 배포가 유지되므로 Actions 결과를 확인한다.
 

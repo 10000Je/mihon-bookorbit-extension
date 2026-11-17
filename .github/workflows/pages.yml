@@ -22,10 +22,16 @@ jobs:
   prepare:
     runs-on: ubuntu-24.04
     steps:
+      - name: Check out publishing tools
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
       - name: Check out the release source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.release_tag }}
+          path: release-source
           persist-credentials: false
       - name: Download signed release APK
         env:
@@ -41,7 +47,7 @@ jobs:
         run: |
           apks=(release-assets/*.apk)
           [[ ${#apks[@]} -eq 1 && -f "${apks[0]}" ]]
-          python3 scripts/generate-repo.py --apk "${apks[0]}" --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --output _site
+          python3 scripts/generate-repo.py --apk "${apks[0]}" --repository "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --source-root release-source --output _site
       - name: Upload Pages files
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:

@@ -8,6 +8,7 @@ Requires the project's pinned Android SDK tools; never reads signing secrets.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -58,11 +59,15 @@ def generate(args):
     require(app is not None and app.get(ANDROID + "allowBackup") == "false", "Backup must be disabled")
     require(any(item.get(ANDROID + "name") == "tachiyomi.extension" for item in manifest.findall("uses-feature")), "Missing Mihon extension feature")
     metadata = {item.get(ANDROID + "name"): item.get(ANDROID + "value") for item in app.findall("meta-data")}
-    require(metadata.get("tachiyomix.extensionLib") == "1.6", "Unsupported extension API")
+    # Android stores this metadata as float32. SDK tools may print either 1.6
+    # or its expanded binary floating-point value (1.600000023841858).
+    api_value = metadata.get("tachiyomix.extensionLib", "nan")
+    require(math.isclose(float(api_value), 1.6, rel_tol=0, abs_tol=1e-6), f"Unsupported extension API: {api_value!r}")
+    print(f"Verified APK API representation: {api_value!r} (canonical 1.6)")
     require(metadata.get("tachiyomi.extension.class") == PACKAGE + ".BookOrbitSourceFactory", "Unexpected factory")
 
     # Derive the immutable slot IDs/count/language from this release's own source.
-    source_root = ROOT / "app/src/main/kotlin/app/bookorbit/mihonext"
+    source_root = args.source_root / "app/src/main/kotlin/app/bookorbit/mihonext"
     identity = (source_root / "model/Identity.kt").read_text()
     factory = (source_root / "BookOrbitSourceFactory.kt").read_text()
     source = (source_root / "BookOrbitSource.kt").read_text()
@@ -87,7 +92,7 @@ def generate(args):
             "apkUrl": f"{website}/releases/download/{args.tag}/{apk.name}",
             "iconUrl": site + "/icon.png",
         },
-        "extensionLib": metadata["tachiyomix.extensionLib"],
+        "extensionLib": "1.6",
         "versionCode": code,
         "versionName": version,
         "contentWarning": content_warning,
@@ -122,6 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--repository", required=True)
     parser.add_argument("--tag", required=True)
     parser.add_argument("--output", type=Path, default=ROOT / "repo")
+    parser.add_argument("--source-root", type=Path, default=ROOT, help="Checkout of the exact release tag (default: this project)")
     try:
         generate(parser.parse_args())
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as error:
