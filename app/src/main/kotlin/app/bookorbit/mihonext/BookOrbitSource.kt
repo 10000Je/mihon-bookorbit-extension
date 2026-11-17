@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.source.model.*
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import java.time.Instant
@@ -25,7 +26,8 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
         ?.let { "BookOrbit · $it (슬롯 $slot)" } ?: "BookOrbit · 슬롯 $slot"
     override val lang = "all"
     override val supportsLatest = false
-    override val baseUrl: String get() = active().server.trimEnd('/')
+    override val baseUrl: String get() = runCatching { SettingsStore.read(slot).active?.server?.trimEnd('/') }
+        .getOrNull() ?: "https://bookorbit.invalid"
     override val client: OkHttpClient by lazy { BookOrbitHttp.client { active() } }
     override fun headersBuilder(): Headers.Builder = Headers.Builder().add("Accept", "image/*, application/json")
     override fun getFilterList() = FilterList()
@@ -47,7 +49,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
 
     private suspend fun catalogue(page: Int, query: String): MangasPage = withContext(Dispatchers.IO) {
         val current = repository()
-        val result = current.repository.catalogue(page, query)
+        val result = withTimeoutOrNull(90_000) { current.repository.catalogue(page, query) } ?: operationTimeout()
         ensureCurrent(current.connection)
         MangasPage(result.items.map { manga(it, current.connection) }, result.hasNextPage)
     }
@@ -57,7 +59,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
     ): SMangaUpdate = withContext(Dispatchers.IO) {
         if (!fetchDetails && !fetchChapters) return@withContext SMangaUpdate(manga, chapters)
         val current = repository()
-        val work = current.repository.work(manga.url, fresh = true)
+        val work = withTimeoutOrNull(120_000) { current.repository.work(manga.url, fresh = true) } ?: operationTimeout()
         val updated = if (fetchDetails) manga(work.books.first(), current.connection).apply {
             url = manga.url
             title = work.title
@@ -85,7 +87,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
 
     override suspend fun getPageList(chapter: SChapter): List<Page> = withContext(Dispatchers.IO) {
         val current = repository()
-        val pages = current.repository.pages(chapter.url)
+        val pages = withTimeoutOrNull(120_000) { current.repository.pages(chapter.url) } ?: operationTimeout()
         ensureCurrent(current.connection)
         pages.mapIndexed { index, url -> Page(index, imageUrl = url) }
     }
@@ -116,4 +118,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
         if (active() != config) throw ApiFailure(app.bookorbit.mihonext.api.FailureKind.CONFIGURATION,
             "조회 중 연결 설정이 변경되었습니다. 다시 불러오세요.")
     }
+
+    private fun operationTimeout(): Nothing = throw ApiFailure(app.bookorbit.mihonext.api.FailureKind.TIMEOUT,
+        "조회 시간이 초과되었습니다. 서버 상태와 라이브러리 크기를 확인하고 다시 시도하세요.")
 }

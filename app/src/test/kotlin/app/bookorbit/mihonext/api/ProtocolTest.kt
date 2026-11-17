@@ -127,6 +127,24 @@ class ProtocolTest {
         assertTrue(job.isCancelled)
     }
 
+    @Test fun headerAndBodyTimeoutsAreClassifiedSeparatelyFromConnectionFailures() = runBlocking {
+        val shortClient = client.newBuilder().readTimeout(100, TimeUnit.MILLISECONDS).build()
+        val shortApi = BookOrbitApi(connection, shortClient)
+        server.enqueue(MockResponse.Builder().body("""{"id":1,"authenticationMethod":"api_key"}""")
+            .headersDelay(1, TimeUnit.SECONDS).build())
+        assertEquals(FailureKind.TIMEOUT, assertThrows(ApiFailure::class.java) { runBlocking { shortApi.principal() } }.kind)
+        server.enqueue(MockResponse.Builder().body("""{"id":1,"authenticationMethod":"api_key"}""")
+            .bodyDelay(1, TimeUnit.SECONDS).build())
+        assertEquals(FailureKind.TIMEOUT, assertThrows(ApiFailure::class.java) { runBlocking { shortApi.principal() } }.kind)
+    }
+
+    @Test fun temporaryServiceFailureRetriesAndThenReturnsTheActualResult() = runBlocking {
+        server.enqueue(MockResponse.Builder().code(503).addHeader("Retry-After", "0").build())
+        respond("""{"id":1,"authenticationMethod":"api_key"}""")
+        assertEquals(1L, api.principal().id)
+        assertEquals(2, server.requestCount)
+    }
+
     @Test fun wrongSchemaAndCrossLibraryResponsesFailInsteadOfBecomingEmptyResults() = runBlocking {
         respond("""{"items":[],"total":10,"page":0,"size":40}""")
         assertThrows(ApiFailure::class.java) { runBlocking { api.catalogue(0, "") } }
@@ -159,6 +177,26 @@ class ProtocolTest {
         val work = repo.work(Identity.work(connection.binding, 7, "series", 4))
         assertEquals(listOf("cbr", "cb7"), repo.chapters(work).map { it.file.format })
         assertEquals(2, server.requestCount)
+    }
+
+    @Test fun anAttachmentOnlyRepresentativeDoesNotHideALaterReadableSeriesVolume() = runBlocking {
+        val repo = BookOrbitRepository(connection, api)
+        respond(books(card(11, """[{"id":9,"format":"cbz","role":"supplement"}]"""), 1, 0, 40))
+        respond(books(card(12, cbz), 1, 0))
+        val page = repo.catalogue(1, "")
+        assertEquals(4L, page.items.single().seriesId)
+        assertEquals(12L, page.items.single().id)
+        assertFalse(page.hasNextPage)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test fun attachmentOnlySeriesIsExcludedWithoutInventingAnEmptyProtocolFailure() = runBlocking {
+        val repo = BookOrbitRepository(connection, api)
+        respond(books(card(11, """[{"id":9,"format":"cbz","role":"supplement"}]"""), 1, 0, 40))
+        respond(books(card(11, """[{"id":9,"format":"cbz","role":"supplement"}]"""), 1, 0))
+        val page = repo.catalogue(1, "")
+        assertTrue(page.items.isEmpty())
+        assertFalse(page.hasNextPage)
     }
 
     @Test fun deletedOrUnopenableFilesProduceExplicitErrors() = runBlocking {

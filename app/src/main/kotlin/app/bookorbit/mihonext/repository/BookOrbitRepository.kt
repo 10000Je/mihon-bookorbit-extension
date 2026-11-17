@@ -9,12 +9,28 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class BookOrbitRepository(private val connection: Connection, private val api: BookOrbitApi) {
-    private val pager = FilteredPager({ query, page -> api.catalogue(page, query) })
+    private val pager = FilteredPager({ query, page ->
+        val response = api.catalogue(page, query)
+        response.copy(items = response.items.map { representative(it) ?: it })
+    })
     private val workLock = Mutex()
     private data class Entry(val time: Long, val work: Work)
     private val works = LinkedHashMap<String, Entry>(16, 0.75f, true)
 
     suspend fun catalogue(page: Int, query: String) = pager.page(query.trim(), page)
+
+    private suspend fun representative(card: BookCard): BookCard? {
+        if (card.readableFiles().isNotEmpty() || card.seriesId == null) return card
+        // The server format filter also matches attachments. A collapsed representative with
+        // no content archive must not hide a later readable volume of the same series.
+        repeat(100) { page ->
+            val books = api.seriesBooks(card.seriesId, page)
+            if (books.seriesInfo?.id != card.seriesId || books.items.any { it.seriesId != card.seriesId }) throw ApiFailure.protocol()
+            books.items.firstOrNull { it.readableFiles().isNotEmpty() }?.let { return it }
+            if ((page + 1L) * books.size >= books.total) return null
+        }
+        throw ApiFailure(FailureKind.PROTOCOL, "시리즈 형식 확인 한도에 도달했습니다. 서버 파일 상태를 확인하세요.")
+    }
 
     suspend fun work(url: String, fresh: Boolean = false): Work = workLock.withLock {
         val identity = Identity.parse(url, connection.binding, connection.libraryId)
