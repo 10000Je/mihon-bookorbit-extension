@@ -59,11 +59,14 @@ def generate(args):
     require(app is not None and app.get(ANDROID + "allowBackup") == "false", "Backup must be disabled")
     require(any(item.get(ANDROID + "name") == "tachiyomi.extension" for item in manifest.findall("uses-feature")), "Missing Mihon extension feature")
     metadata = {item.get(ANDROID + "name"): item.get(ANDROID + "value") for item in app.findall("meta-data")}
-    # Android stores this metadata as float32. SDK tools may print either 1.6
-    # or its expanded binary floating-point value (1.600000023841858).
-    api_value = metadata.get("tachiyomix.extensionLib", "nan")
+    # Some command-line tools render float metadata as a rounded raw integer
+    # (e.g. 1070386368.000000). Read the typed value with pinned aapt2 instead.
+    tree = run(sdk / "build-tools/36.0.0/aapt2", "dump", "xmltree", "--file", "AndroidManifest.xml", apk)
+    api_match = re.search(r':name\([^)]+\)="tachiyomix\.extensionLib"[^\n]*\n\s+A: [^\n]*:value\([^)]+\)=([^\s]+)', tree)
+    require(api_match, "Missing typed extension API metadata")
+    api_value = api_match[1].strip('"')
     require(math.isclose(float(api_value), 1.6, rel_tol=0, abs_tol=1e-6), f"Unsupported extension API: {api_value!r}")
-    print(f"Verified APK API representation: {api_value!r} (canonical 1.6)")
+    print(f"Verified APK API from pinned aapt2: {api_value!r} (canonical 1.6)")
     require(metadata.get("tachiyomi.extension.class") == PACKAGE + ".BookOrbitSourceFactory", "Unexpected factory")
 
     # Derive the immutable slot IDs/count/language from this release's own source.
