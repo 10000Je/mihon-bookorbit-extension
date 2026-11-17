@@ -55,3 +55,15 @@ gh release create v1.6.1 --verify-tag \
 - 릴리스 APK는 기존 에뮬레이터 검증 산출물과 SHA-256이 일치한다: `2238cca74aa5e9b5ec01756ac08842a1ac1088a2e20fad8b272b9e3d38b9fc3d`.
 - APK Manifest와 인증서·v2 서명을 재확인했다. 현재 `adb devices`에 연결된 기기는 없으며 이번 배포 과정에서는 Mihon 스토어 등록 UI를 직접 실행하지 않았다. 기존 독자/라이브러리 시험과 구분한다.
 - 실제 release APK로 피드를 재생성해 결과의 동일성과 6개 불변 소스 ID를 확인했다. 실제 debug APK는 서명 불일치로, release APK에 잘못된 태그를 주면 버전 불일치로 거부됐으며 두 실패 모두 출력 파일을 만들지 않았다. Workflow YAML 파싱과 `git diff --check`도 통과했다.
+
+## 공개 배포 결과 (2026-11-18, Asia/Seoul)
+
+- 공개 저장소를 생성하고 기존 Git 이력을 유지하여 main을 푸시했다. 배포 기능 커밋은 `abafc65`, 태그는 `v1.6.1`이다. 배포 도구 수정은 `4c1c3df`, `93f34b9`로 별도 커밋했으며 이미 발행한 태그나 APK를 변경하지 않았다.
+- [v1.6.1 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.1)를 발행했다. 자산은 서명 release APK 하나(89,054 bytes), `SHA256SUMS`, `repo.json`이다. 인증 없이 세 파일을 내려받아 HTTP 200, 체크섬, JSON 일치와 APK v2 서명을 확인했다.
+- 로컬 APK: `/home/ubuntu/workspace/mihon-bookorbit-extension/artifacts/bookorbit-independent-1.6.1-release.apk` (프로젝트 상대 경로 `artifacts/bookorbit-independent-1.6.1-release.apk`). Git 이력에는 APK를 포함하지 않았다.
+- [Pages workflow 실행 44132356517](https://github.com/10000Je/mihon-bookorbit-extension/actions/runs/44132356517): prepare와 deploy 모두 **success**. Pages source는 `workflow`, HTTPS 강제 설정이다.
+- 공개 `repo.json`과 `index.json`은 HTTP 200 / `application/json; charset=utf-8`, `icon.png`는 HTTP 200 / `image/png`, `SHA256SUMS`도 HTTP 200이었다. 배포 JSON이 로컬 스냅샷과 같고 확장 1개, 불변 ID의 소스 6개, API 1.6, versionCode 1 / versionName 1.6.1임을 확인했다.
+- **Pages JSON의 apkUrl을 실제 요청**하여 HTTP 200과 SHA-256 `2238cca74aa5e9b5ec01756ac08842a1ac1088a2e20fad8b272b9e3d38b9fc3d` 일치를 확인했다. 공개 Release에서 받은 동일 바이트의 APK 인증서도 고정한 지문과 일치했다.
+- 최초 두 Actions 실행은 SDK `apkanalyzer`의 float 출력 문제로 실패했다. 실제 API 1.6이 `1070386368.000000`으로 표시되어 엄격 비교가 실패했다. float 정규화만으로 해결되지 않아 API 값은 고정한 **aapt2 36.0.0**의 typed XML dump에서 읽도록 수정했다. 실제 APK와 서명 검증은 그대로 유지하고 관찰된 잘못된 XML 렌더링을 재현해 수정 후 동일 JSON이 생성됨을 확인했다. 최종 GitHub 로그에서도 aapt2의 `1.6`을 확인했다.
+- Actions는 Node.js 20 기반 공식 액션을 Node.js 24에서 강제 실행한다는 deprecation annotation을 남겼지만 작업은 성공했다. 향후 액션 SHA 갱신 시 재검증 대상이다.
+- 연결된 Android 기기가 없어 **새 Pages 스토어의 실제 Mihon 추가·스토어 경유 설치·후속 버전 업데이트 UI는 미검증**이다. HTTP/메타데이터/다운로드 검증과 이전 에뮬레이터에서의 APK 검증을 구분한다.
