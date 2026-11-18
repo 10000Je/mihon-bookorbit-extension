@@ -1,11 +1,11 @@
-# BookOrbit 1.6.3 — 로컬 APK 빌드, 공개 미배포
+# BookOrbit 1.6.3
 
 - 앱/확장 이름을 **BookOrbit**, 소스 이름을 **BookOrbit I / II / III**로 변경했습니다.
 - **기본 라이브러리 선택 / 적용**을 제거했습니다. 서버 URL과 API 키를 입력하고 **연결 확인 / 라이브러리 재검색**에 성공하면 전체 라이브러리가 바로 적용됩니다.
 - **인기**는 접근 가능한 모든 라이브러리의 만화를 표시합니다. **필터 → 라이브러리**에서 전체 또는 특정 라이브러리를 선택합니다.
 - 라이브러리 경계를 넘는 페이지에서 작품을 누락하거나 다른 라이브러리의 같은 시리즈 ID를 합치지 않습니다. 저장 작품·챕터·이미지는 원래 연결을 유지합니다.
-- 로컬 JVM 단위 테스트 **48개**, Debug/Release 빌드 및 정적 서명 검사를 통과했습니다. 에뮬레이터·기기·실서버 재검증과 공개 배포는 하지 않았습니다.
-- 설치용 파일: `artifacts/bookorbit-1.6.3-release.apk`, 체크섬: `artifacts/SHA256SUMS-1.6.3`. 기존 Release와 같은 인증서입니다.
+- 로컬 JVM 단위 테스트 **48개**, Debug/Release 빌드 및 정적 서명 검사를 통과했습니다. 사용자가 동작을 확인했습니다. 에뮬레이터·기기·실서버 자동 재검증은 수행하지 않았습니다.
+- [1.6.3 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.3)와 기존 Mihon 스토어 주소로 배포합니다. 로컬 설치용 파일: `artifacts/bookorbit-1.6.3-release.apk`, 체크섬: `artifacts/SHA256SUMS-1.6.3`. 기존 Release와 같은 인증서입니다.
 
 아래는 이전 버전의 기록입니다.
 

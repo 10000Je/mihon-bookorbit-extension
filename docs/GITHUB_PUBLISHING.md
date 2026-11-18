@@ -14,7 +14,7 @@ Mihon에 추가할 주소: <https://10000je.github.io/mihon-bookorbit-extension/
 - [ExtensionStoreService.kt](https://github.com/mihonapp/mihon/blob/feadad5e1e2bf638be6e2ca317d11657b09d4596/data/src/main/java/mihon/data/extension/service/ExtensionStoreService.kt): `{`로 시작하는 JSON 스토어를 해석하고, `extensionListUrl=null`이면 같은 파일의 `extensionList.extensions`를 사용한다.
 - [NetworkLegacyExtensionRepo.kt](https://github.com/mihonapp/mihon/blob/feadad5e1e2bf638be6e2ca317d11657b09d4596/data/src/main/java/mihon/data/extension/model/NetworkLegacyExtensionRepo.kt): 구형 `meta` 형식은 별도 계약이다. 이 프로젝트는 현대 JSON 형식을 사용하며 구형 `index.min.json` 호환성을 주장하지 않는다.
 
-`repo/repo.json`은 최초 릴리스의 사람이 확인 가능한 스냅샷이다. 실제 Pages 파일은 Release마다 서명 APK와 해당 태그의 코드에서 재생성된다. `index.json`은 동일한 `extensions` 객체의 독립 사본이다. APK는 Pages에 복제하지 않고 버전별 GitHub Release 자산의 고정 URL로 연결한다. 소스의 홈 URL에는 개인 서버를 포함하지 않는다.
+`repo/repo.json`은 최신 릴리스의 사람이 확인 가능한 스냅샷이다. 실제 Pages 파일은 Release마다 서명 APK와 해당 태그의 코드에서 재생성된다. `index.json`은 동일한 `extensions` 객체의 독립 사본이다. APK는 Pages에 복제하지 않고 버전별 GitHub Release 자산의 고정 URL로 연결한다. 소스의 홈 URL에는 개인 서버를 포함하지 않는다.
 
 ## 서명과 배포 흐름
 
@@ -33,20 +33,20 @@ GitHub 저장소의 Pages source는 **GitHub Actions** (`build_type=workflow`)�
 ```sh
 ANDROID_HOME=/absolute/android-sdk \
   python3 scripts/generate-repo.py \
-    --apk artifacts/bookorbit-independent-1.6.1-release.apk \
-    --repository 10000Je/mihon-bookorbit-extension --tag v1.6.1
+    --apk artifacts/bookorbit-1.6.3-release.apk \
+    --repository 10000Je/mihon-bookorbit-extension --tag v1.6.3
 ```
 
 4. 릴리스 노트·검증 기록·생성한 `repo/` 스냅샷을 갱신하고 커밋·푸시한다. 새 태그를 해당 커밋에 만들고 푸시한다. 기존 태그나 릴리스 파일은 덮어쓰지 않는다.
-5. GitHub Release에 **서명된 release APK 하나**, `repo/SHA256SUMS`, `repo/repo.json`을 첨부하여 발행한다. 다음은 최초 버전의 명령 예시다.
+5. GitHub Release에 **서명된 release APK 하나**, `repo/SHA256SUMS`, `repo/repo.json`을 첨부하여 발행한다. 다음은 1.6.3 명령 예시다. 릴리스 노트 파일에는 해당 버전 내용만 넣는다.
 
 ```sh
-gh release create v1.6.1 --verify-tag \
-  --title 'BookOrbit Independent 1.6.1' --notes-file docs/RELEASE_NOTES.md \
-  artifacts/bookorbit-independent-1.6.1-release.apk repo/SHA256SUMS repo/repo.json
+gh release create v1.6.3 --verify-tag \
+  --title 'BookOrbit 1.6.3' --notes-file /absolute/path/release-notes-1.6.3.md \
+  artifacts/bookorbit-1.6.3-release.apk repo/SHA256SUMS repo/repo.json
 ```
 
-6. Pages Actions 성공과 공개 JSON/APK의 HTTP 응답·서명·체크섬을 확인한다. 수동 재배포는 `gh workflow run pages.yml -f release_tag=v1.6.1`이다. 오래된 태그로 수동 실행하면 스토어도 그 버전으로 돌아가므로 최신 발행 버전을 지정한다.
+6. Pages Actions 성공과 공개 JSON/APK의 HTTP 응답·서명·체크섬을 확인한다. 수동 재배포는 `gh workflow run pages.yml -f release_tag=v1.6.3`이다. 오래된 태그로 수동 실행하면 스토어도 그 버전으로 돌아가므로 최신 발행 버전을 지정한다.
 
 ## 배포 전 재검증 (2026-11-18)
 

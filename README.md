@@ -2,7 +2,7 @@
 
 Mihon에서 개인 BookOrbit 서버의 만화를 읽기 위한 비공식 Android 확장입니다. **BookOrbit I / II / III**의 3개 소스를 제공하며, 각 소스에서 **필터 → 라이브러리**로 여러 라이브러리를 탐색합니다. CBZ·CBR·CB7 형식을 지원합니다.
 
-Android 8.0 이상이 필요합니다. 기존 1.6.1은 Mihon 0.21.3과 BookOrbit 3.8.0에서 검증했습니다. 현재 1.6.3은 기본 라이브러리 설정을 제거하고 인기에서 모든 라이브러리를 표시합니다. 기기·실서버 재검증은 하지 않았으며, 아래 공개 배포 링크의 기존 APK에는 아직 반영되지 않았습니다. 로컬 설치용 파일은 `artifacts/bookorbit-1.6.3-release.apk`입니다.
+Android 8.0 이상이 필요합니다. 기존 1.6.1은 Mihon 0.21.3과 BookOrbit 3.8.0에서 검증했습니다. 1.6.3은 기본 라이브러리 설정을 제거하고 인기에서 모든 라이브러리를 표시합니다. 로컬 단위 테스트 48개와 빌드·서명 검사를 통과했고 사용자가 동작을 확인했습니다. 기기·실서버 자동 재검증은 수행하지 않았습니다. [1.6.3 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.3) 또는 아래 확장 스토어에서 설치할 수 있습니다.
 
 ## 설치
 
@@ -12,7 +12,7 @@ Android 8.0 이상이 필요합니다. 기존 1.6.1은 Mihon 0.21.3과 BookOrbit
    https://10000je.github.io/mihon-bookorbit-extension/repo.json
    ```
 
-2. **탐색 → 확장**에서 확장을 설치하고, 신뢰 승인이 표시되면 승인합니다. [Releases](https://github.com/10000Je/mihon-bookorbit-extension/releases/latest)에서 APK를 직접 설치할 수도 있습니다.
+2. **탐색 → 확장**에서 `BookOrbit`을 설치하거나 업데이트하고, 신뢰 승인이 표시되면 승인합니다. [Releases](https://github.com/10000Je/mihon-bookorbit-extension/releases/latest)에서 APK를 직접 설치할 수도 있습니다.
 
 ## 사용법
 
