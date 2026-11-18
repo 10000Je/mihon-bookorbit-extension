@@ -22,7 +22,7 @@ Mihon에 추가할 주소: <https://10000je.github.io/mihon-bookorbit-extension/
 
 `.github/workflows/pages.yml`은 Release 발행 또는 수동 실행 시 APK를 내려받아 다시 검증하고 `_site/`를 Pages에 배포한다. 배포 도구는 main에서, 슬롯 정보는 별도로 checkout한 정확한 release 태그에서 읽으므로 과거 태그를 수정하지 않고도 배포 도구를 고칠 수 있다. 서명 개인 키·비밀번호·BookOrbit 접속 정보는 GitHub에 업로드하지 않는다. Actions에는 기본 읽기 토큰과 Pages 배포 권한만 사용한다. 사용한 공식 GitHub Actions는 커밋 SHA로 고정했다.
 
-GitHub 저장소의 Pages source는 **GitHub Actions** (`build_type=workflow`)로 설정한다. 최초 배포 후에는 GitHub Release 발행이 자동 갱신을 시작한다. Pages 작업이 실패하면 기존 배포가 유지되므로 Actions 결과를 확인한다.
+GitHub 저장소의 Pages source는 **GitHub Actions** (`build_type=workflow`)다. Release 발행으로 자동 작업이 시작되지만 현재 `github-pages` 환경은 `main` 브랜치만 허용한다. 따라서 태그에서 시작한 배포는 환경 보호 규칙에 거부될 수 있다. 이 경우 보호 규칙을 변경하지 않고 `main`의 기존 수동 작업을 해당 release_tag로 실행한다. Pages 작업이 실패하면 기존 배포가 유지되므로 Actions 결과와 공개 피드를 확인한다.
 
 ## 다음 버전 발행
 
@@ -67,3 +67,14 @@ gh release create v1.6.3 --verify-tag \
 - 최초 두 Actions 실행은 SDK `apkanalyzer`의 float 출력 문제로 실패했다. 실제 API 1.6이 `1070386368.000000`으로 표시되어 엄격 비교가 실패했다. float 정규화만으로 해결되지 않아 API 값은 고정한 **aapt2 36.0.0**의 typed XML dump에서 읽도록 수정했다. 실제 APK와 서명 검증은 그대로 유지하고 관찰된 잘못된 XML 렌더링을 재현해 수정 후 동일 JSON이 생성됨을 확인했다. 최종 GitHub 로그에서도 aapt2의 `1.6`을 확인했다.
 - Actions는 Node.js 20 기반 공식 액션을 Node.js 24에서 강제 실행한다는 deprecation annotation을 남겼지만 작업은 성공했다. 향후 액션 SHA 갱신 시 재검증 대상이다.
 - 연결된 Android 기기가 없어 **새 Pages 스토어의 실제 Mihon 추가·스토어 경유 설치·후속 버전 업데이트 UI는 미검증**이다. HTTP/메타데이터/다운로드 검증과 이전 에뮬레이터에서의 APK 검증을 구분한다.
+
+## BookOrbit 1.6.3 배포 결과 (2026-11-18, Asia/Seoul)
+
+- 사용자가 정상 동작을 확인한 기존 APK를 재빌드하지 않고 배포했다. 파일은 `artifacts/bookorbit-1.6.3-release.apk` (97,702 bytes), SHA-256은 `fb1d4dd7fbe812461db6205747f2f0ac076c933e8f417a5e39a8c7f7de5f9c83`이다. v2 서명과 기존 공개 인증서 핀의 일치를 확인한 뒤 스토어 스냅샷을 생성했다.
+- 배포 준비 커밋 `24cdd1a`에 새 태그 `v1.6.3`을 생성해 main과 함께 푸시했다. 기존 이력·태그·APK는 변경하지 않았다. 로컬의 기존 Gradle wrapper 수정은 커밋에서 제외했다.
+- [BookOrbit 1.6.3 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.3)를 최신 정식 릴리스로 공개했다. 자산은 `bookorbit-1.6.3-release.apk`, `SHA256SUMS`, `repo.json`이다. 업로드 후 다운로드한 세 파일이 로컬과 같은 것을 확인하고 발행했으며 공개 후 인증 없이 다시 받아 HTTP 200과 동일 바이트/체크섬을 확인했다.
+- 태그 이벤트로 시작한 [첫 Pages 실행 44311050397](https://github.com/10000Je/mihon-bookorbit-extension/actions/runs/44311050397)은 prepare 성공 후 deploy가 환경 규칙에 거부됐다. 실제 annotation은 `Tag "v1.6.3" is not allowed to deploy to github-pages due to environment protection rules.`였다. 환경에는 main 브랜치 허용 규칙 하나만 설정되어 있었다.
+- 환경 보호 규칙을 변경하지 않고 기존 수동 경로 `gh workflow run pages.yml --ref main -f release_tag=v1.6.3`을 실행했다. [Pages 실행 44311335413](https://github.com/10000Je/mihon-bookorbit-extension/actions/runs/44311335413)은 prepare/deploy 모두 **success**다. 다음 릴리스도 같은 main 수동 경로를 사용한다. 기존 Node.js 20 액션 관련 deprecation annotation은 배포를 막지 않았다.
+- 공개 `repo.json` 및 `index.json`은 HTTP 200 / `application/json; charset=utf-8`이며 로컬 스냅샷과 일치한다. 확장 이름 BookOrbit, versionName 1.6.3 / versionCode 3, API 1.6, 소스 이름 BookOrbit I / II / III와 ID `641300700001`~`641300700003`을 확인했다.
+- 공개 `SHA256SUMS` 및 `icon.png`도 HTTP 200이고 로컬과 일치한다. 공개 피드의 apkUrl을 직접 요청해 HTTP 200과 사용자 확인 APK의 SHA-256 및 바이트 일치를 확인했다. 기존 스토어 주소는 `https://10000je.github.io/mihon-bookorbit-extension/repo.json`으로 유지된다.
+- 로컬 JVM 단위 테스트 48개와 기존 빌드 결과를 사용했다. 배포 과정에서 에뮬레이터·기기·실서버 시험을 추가 실행하지 않았다. 사용자 확인은 사용자 보고이며 구체적 시험 환경과 세부 항목은 제공되지 않았다. 스토어 경유 업데이트 UI를 에이전트가 직접 시험한 것은 아니다.

@@ -6,7 +6,7 @@
 
 구현 파일: `settings/SettingsScreen.kt`, `settings/Connection.kt`, `BookOrbitSource.kt`, `LibraryFilter.kt`, `repository/LibraryCataloguePager.kt`, `model/Identity.kt`, `AndroidManifest.xml`. 통합 순서는 라이브러리 ID순 + 각 라이브러리의 제목순이며 페이지당 최대 40작품이다. 다른 라이브러리의 동일 seriesId도 각각 유지한다. 경계 페이지·빈 라이브러리·권한 오류·캐시 제한 정책은 [ARCHITECTURE.md](ARCHITECTURE.md)에 기록했다.
 
-실행한 기능 테스트는 로컬 JVM 단위 테스트뿐이며 **48개 통과, 실패/오류/skip 0**이다. ProtocolTest 16, ComicFormatTest 3, FilteredPagerTest 6, LibraryCataloguePagerTest 8, IdentityAndSettingsTest 5, LibrarySelectionTest 10개다. MockWebServer는 합성 응답만 사용했다. `LiveServerTest`는 기본 작업에서 제외되어 실행되지 않았다. 에뮬레이터·기기·실서버 호출, 설치 및 공개 배포는 하지 않았다.
+실행한 기능 테스트는 로컬 JVM 단위 테스트뿐이며 **48개 통과, 실패/오류/skip 0**이다. ProtocolTest 16, ComicFormatTest 3, FilteredPagerTest 6, LibraryCataloguePagerTest 8, IdentityAndSettingsTest 5, LibrarySelectionTest 10개다. MockWebServer는 합성 응답만 사용했다. `LiveServerTest`는 기본 작업에서 제외되어 실행되지 않았다. 에이전트는 에뮬레이터·기기·실서버 호출과 설치를 하지 않았다. 이후 사용자가 동작을 확인한 뒤 배포를 요청하여 동일 APK를 공개했다.
 
 앞선 APK 빌드 요청에 따라 수정된 소스도 Debug/Release로 다시 빌드했다. 작업 시작 전부터 있던 wrapper의 Gradle 9.7.1 URL/8.14.4 체크섬 변경은 그대로 두고 캐시된 `/home/ubuntu/.gradle/wrapper/dists/gradle-8.14.4-bin/92wwslzcyst3phie3o264zltu/gradle-8.14.4/bin/gradle`을 사용했다. `--offline :app:testDebugUnitTest`와 기존 비공개 signing properties를 지정한 `--offline :app:assembleDebug :app:assembleRelease` 모두 BUILD SUCCESSFUL이다. Release 필수 Lint도 통과했다.
 
@@ -17,7 +17,11 @@
 
 Release 절대 경로: `/home/ubuntu/workspace/mihon-bookorbit-extension/artifacts/bookorbit-1.6.3-release.apk`. 체크섬 파일: `artifacts/SHA256SUMS-1.6.3`. 검사 기록: `artifacts/apk-verification-1.6.3.txt`, `artifacts/manifest-1.6.3.txt`. SDK 36.0.0의 apksigner와 aapt2로 APK v2 서명, 패키지 `app.bookorbit.mihonext`, 표시명 BookOrbit, 버전 1.6.3 (3), extensionLib float 1.6을 확인했다. Release 인증서는 기존 핀 `bf3c650b87f278df0f01ecb458345f7a1c231a5f7634a29a2274da63cf0b1b10`과 같다.
 
-Release APK로 기존 Release를 업데이트하고 Mihon에서 요청하면 신뢰 승인한다. 연결 확인을 실행한 뒤 소스 화면에 다시 진입하면 전체 라이브러리와 새 필터가 적용된다. 실제 UI·읽기 동작과 BookOrbit 3.8.0 이외 버전은 이번에 검증하지 않았다. 공개 스토어 피드는 기존 배포본을 유지하며 이번 명칭 변경을 아직 포함하지 않는다. `git diff --check`는 통과했다.
+Release APK로 기존 Release를 업데이트하고 Mihon에서 요청하면 신뢰 승인한다. 연결 확인을 실행한 뒤 소스 화면에 다시 진입하면 전체 라이브러리와 새 필터가 적용된다. 사용자가 1.6.3의 정상 동작을 확인했다고 보고했으며 구체적 환경/시험 항목은 제공되지 않았다. 에이전트의 실제 UI·읽기 및 다른 서버 버전 시험은 미실행이다. 공개 스토어 피드도 1.6.3과 BookOrbit 명칭을 반영했다. `git diff --check`는 통과했다.
+
+### 공개 배포 검증
+
+사용자가 확인한 APK의 SHA-256을 유지하여 [v1.6.3 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.3)에 배포했다. 태그는 배포 준비 커밋 `24cdd1a`를 가리킨다. 공개 APK·체크섬·repo.json을 인증 없이 받아 로컬과 동일함을 확인했다. [Pages 실행 44311335413](https://github.com/10000Je/mihon-bookorbit-extension/actions/runs/44311335413)은 성공했고 공개 `repo.json`, `index.json`, `SHA256SUMS`, `icon.png`는 모두 HTTP 200 및 로컬 스냅샷과 일치했다. 피드의 apkUrl도 실제 요청해 원본 APK와 같은 바이트/체크섬임을 확인했다. 자동 태그 배포의 환경 규칙 거부와 main 수동 경로 재실행 과정은 [GITHUB_PUBLISHING.md](GITHUB_PUBLISHING.md)에 기록했다. 이번 배포를 위해 소스 코드를 바꾸거나 추가 기기/실서버 테스트를 실행하지 않았다.
 
 ## 과거 1.6.2 (versionCode 2)
 

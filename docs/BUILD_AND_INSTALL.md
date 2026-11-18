@@ -88,7 +88,7 @@ fixture 구성: 첫 라이브러리에 EPUB 전용 작품, CBZ 시리즈, 실제
 - Manifest·서명·클래스 검사: `artifacts/apk-verification-1.6.3.txt`
 - 단위 테스트 보고서: `app/build/reports/tests/testDebugUnitTest/index.html` (48개 통과)
 
-앱 이름은 BookOrbit, 소스는 BookOrbit I / II / III입니다. 설치 후 연결 확인을 한 번 실행하고 소스 화면에 다시 진입하세요. 인기는 전체 라이브러리, 필터는 전체 또는 특정 라이브러리를 표시합니다. 실제 기기 설치와 읽기는 검증하지 않았습니다.
+앱 이름은 BookOrbit, 소스는 BookOrbit I / II / III입니다. [1.6.3 Release](https://github.com/10000Je/mihon-bookorbit-extension/releases/tag/v1.6.3) 또는 기존 Mihon 스토어에서 설치·업데이트할 수 있습니다. 설치 후 연결 확인을 한 번 실행하고 소스 화면에 다시 진입하세요. 인기는 전체 라이브러리, 필터는 전체 또는 특정 라이브러리를 표시합니다. 사용자가 정상 동작을 확인했다고 보고했으며 에이전트의 기기 설치/읽기 시험은 수행하지 않았습니다.
 
 ## 과거 1.6.2 산출물
 
@@ -98,7 +98,7 @@ fixture 구성: 첫 라이브러리에 EPUB 전용 작품, CBZ 시리즈, 실제
 - Manifest·서명·클래스 검사: `artifacts/apk-verification-1.6.2.txt`
 - 단위 테스트 보고서: `app/build/reports/tests/testDebugUnitTest/index.html`
 
-Release APK를 Android에서 열어 설치한 뒤 Mihon에서 신뢰 승인이 요청되면 승인합니다. 이번에 기기 설치나 읽기 검증은 실행하지 않았습니다. 공개 Releases/스토어는 아직 기존 버전입니다.
+Release APK를 Android에서 열어 설치한 뒤 Mihon에서 신뢰 승인이 요청되면 승인합니다. 이번에 기기 설치나 읽기 검증은 실행하지 않았습니다. 1.6.2는 공개 배포하지 않았으며 현재 공개 버전은 1.6.3입니다.
 
 ## 과거 1.6.1 산출물
 
