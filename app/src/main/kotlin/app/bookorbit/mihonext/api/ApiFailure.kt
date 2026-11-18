@@ -15,6 +15,6 @@ class ApiFailure(val kind: FailureKind, message: String) : IOException(message) 
             else -> ApiFailure(FailureKind.PROTOCOL, "지원하지 않는 서버 응답($code). API 호환성과 리다이렉트를 확인하세요.")
         }
         fun protocol() = ApiFailure(FailureKind.PROTOCOL, "BookOrbit API 응답 형식이 호환되지 않습니다.")
-        fun configuration() = ApiFailure(FailureKind.CONFIGURATION, "소스 설정에서 서버와 API 키를 연결하고 라이브러리를 선택하세요.")
+        fun configuration() = ApiFailure(FailureKind.CONFIGURATION, "소스 설정에서 서버와 API 키의 연결을 확인한 뒤 소스 화면에 다시 진입하세요.")
     }
 }

@@ -23,7 +23,7 @@
 ./gradlew :app:testDebugUnitTest
 ```
 
-`LiveServerTest`는 기본 작업에서 제외하므로 실서버 설정 환경변수가 있어도 실행되지 않습니다. 에뮬레이터·기기 호출과 APK 빌드·설치·서명 검증은 별도 사용자 요청이 있을 때만 수행합니다. 1.6.2는 기능 테스트를 로컬 JVM 단위 테스트로 제한했고, 후속 APK 빌드 요청으로 Debug/Release 빌드·서명 검사를 추가 실행했습니다. 로컬 wrapper URL과 체크섬에 기존 사용자 변경이 있어 캐시된 Gradle 8.14.4를 직접 사용한 내역은 [VERIFICATION.md](VERIFICATION.md)에 기록했습니다.
+`LiveServerTest`는 기본 작업에서 제외하므로 실서버 설정 환경변수가 있어도 실행되지 않습니다. 에뮬레이터·기기 호출과 APK 빌드·설치·서명 검증은 별도 사용자 요청이 있을 때만 수행합니다. 1.6.3은 기능 테스트를 로컬 JVM 단위 테스트로 제한했고, 후속 APK 빌드 요청으로 Debug/Release 빌드·서명 검사를 추가 실행했습니다. 로컬 wrapper URL과 체크섬에 기존 사용자 변경이 있어 캐시된 Gradle 8.14.4를 직접 사용한 내역은 [VERIFICATION.md](VERIFICATION.md)에 기록했습니다.
 
 ## 별도 빌드 요청 시 참고 명령
 
@@ -61,9 +61,9 @@ BOOKORBIT_SIGNING_PROPERTIES=/home/ubuntu/.local/share/bookorbit-mihon-extension
 생성 APK는 v2 서명을 검증했습니다. release/debug는 서명이 다르므로 같은 패키지로 상호 덮어쓸 수 없습니다. 테스트 환경의 debug를 제거한 다음 release를 설치했으며, 일반 사용자는 release 한 종류를 유지하면 됩니다.
 
 ```sh
-adb install -r artifacts/bookorbit-independent-1.6.1-release.apk
+adb install -r artifacts/bookorbit-1.6.3-release.apk
 ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
-  artifacts/bookorbit-independent-1.6.1-release.apk
+  artifacts/bookorbit-1.6.3-release.apk
 ```
 
 확장에는 Activity가 없으므로 Android 앱 서랍에서 실행하지 않습니다. Mihon에서 확장을 신뢰 승인한 후 소스 설정을 엽니다. APK 직접 설치가 가능하며, 스토어에서 설치·업데이트하려면 `https://10000je.github.io/mihon-bookorbit-extension/repo.json`을 Mihon 확장 스토어에 추가합니다. BookOrbit 서버 설정은 변경하지 않습니다. [GitHub 배포 절차](GITHUB_PUBLISHING.md)를 참고하세요.
@@ -80,7 +80,17 @@ ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
 
 fixture 구성: 첫 라이브러리에 EPUB 전용 작품, CBZ 시리즈, 실제 RAR 기반 CBR 시리즈, 실제 7z 기반 CB7 시리즈, EPUB+CBZ 혼합 작품, 비시리즈 CBZ 도서. 다른 두 라이브러리에 각각 CBZ 작품 하나. 각 만화는 원본 생성 PNG 3장을 포함합니다. 테스트는 EPUB 검색 제외, 총 7작품, 각 챕터와 페이지 수, 21개 PNG 실제 바이트, 인증된 표지를 확인합니다. 잘못된 TLS 구현으로 시험을 통과시키지 않으며 신뢰 인증서는 테스트 클라이언트에만 추가합니다. 프로덕션 소스는 기본 TLS 검증을 유지합니다.
 
-## 현재 1.6.2 산출물
+## 현재 1.6.3 산출물
+
+- 설치용 Release: `artifacts/bookorbit-1.6.3-release.apk` (기존 Release와 동일한 서명)
+- 개발용 Debug: `artifacts/bookorbit-1.6.3-debug.apk`
+- 체크섬: `artifacts/SHA256SUMS-1.6.3`
+- Manifest·서명·클래스 검사: `artifacts/apk-verification-1.6.3.txt`
+- 단위 테스트 보고서: `app/build/reports/tests/testDebugUnitTest/index.html` (48개 통과)
+
+앱 이름은 BookOrbit, 소스는 BookOrbit I / II / III입니다. 설치 후 연결 확인을 한 번 실행하고 소스 화면에 다시 진입하세요. 인기는 전체 라이브러리, 필터는 전체 또는 특정 라이브러리를 표시합니다. 실제 기기 설치와 읽기는 검증하지 않았습니다.
+
+## 과거 1.6.2 산출물
 
 - 설치용 Release: `artifacts/bookorbit-independent-1.6.2-release.apk` (기존 Release와 동일한 서명)
 - 개발용 Debug: `artifacts/bookorbit-independent-1.6.2-debug.apk`

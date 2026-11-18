@@ -27,28 +27,33 @@ import java.util.UUID
     // Registry entries omit credentials; connections resolve them from active.
     val libraryBindings: List<Connection> = emptyList(),
 ) {
-    fun bind(library: Library): SlotState {
-        val found = discovery ?: throw ApiFailure.configuration()
-        if (found.draft != draft || found.libraries.none { it.id == library.id }) throw ApiFailure.configuration()
+    /** Apply the verified server/account and every accessible library; there is no default library. */
+    fun applyDiscovery(found: Discovery): SlotState {
+        if (found.draft != draft) throw ApiFailure.configuration()
+        if (found.principalId <= 0 || found.libraries.size > 2000 || found.libraries.any { it.id <= 0 } ||
+            found.libraries.distinctBy { it.id }.size != found.libraries.size) throw ApiFailure.protocol()
         val known = listOfNotNull(active) + libraryBindings + previous
-        val bindings = found.libraries.distinctBy { it.id }.map { entry ->
-            val existing = known.firstOrNull {
-                it.server == draft.server && it.principalId == found.principalId && it.libraryId == entry.id
-            }
+        val knownByScope = known.groupBy { Triple(it.server, it.principalId, it.libraryId) }
+        val bindings = found.libraries.sortedBy { it.id }.map { entry ->
+            val existing = knownByScope[Triple(draft.server, found.principalId, entry.id)]?.firstOrNull()
             Connection(draft.server, "", found.principalId, entry.id, entry.name,
                 existing?.binding ?: UUID.randomUUID().toString().replace("-", ""))
         }
-        val next = bindings.first { it.libraryId == library.id }.copy(apiKey = draft.apiKey)
-        return copy(active = next, libraryBindings = bindings, previous = known
-            .filter { old -> bindings.none { it.binding == old.binding } }
+        // Preserve the serialized field as a credential anchor, never a catalogue selection.
+        // ID 0 represents a verified account with no accessible libraries.
+        val next = (bindings.firstOrNull() ?: Connection(draft.server, "", found.principalId, 0, "", "0".repeat(32)))
+            .copy(apiKey = draft.apiKey)
+        val currentBindings = bindings.map { it.binding }.toSet()
+        return copy(discovery = found, active = next, libraryBindings = bindings, previous = known
+            .filter { it.libraryId > 0 && it.binding !in currentBindings }
             .distinctBy { it.binding }.take(12).map { it.copy(apiKey = "") })
     }
 
     fun connections(): List<Connection> {
         val current = active ?: return emptyList()
-        return (listOf(current) + libraryBindings).filter {
-            it.server == current.server && it.principalId == current.principalId
-        }.distinctBy { it.libraryId }.map { it.copy(apiKey = current.apiKey) }
+        return libraryBindings.ifEmpty { listOf(current) }.filter {
+            it.libraryId > 0 && it.server == current.server && it.principalId == current.principalId
+        }.distinctBy { it.libraryId }.sortedBy { it.libraryId }.map { it.copy(apiKey = current.apiKey) }
     }
 
     fun connection(libraryId: Long? = null, binding: String? = null): Connection = connections()

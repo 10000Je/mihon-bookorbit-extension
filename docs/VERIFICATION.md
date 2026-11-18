@@ -1,6 +1,25 @@
 # 빌드·검증 기록
 
-## 현재 변경: 1.6.2 (versionCode 2)
+## 현재 변경: BookOrbit 1.6.3 (versionCode 3)
+
+2026-11-18. 기본 라이브러리 선택/적용 설정과 선택 로직을 제거했다. **연결 확인 / 라이브러리 재검색** 성공 시 서버·계정·접근 가능한 전체 라이브러리를 자동 적용한다. 인기는 모든 라이브러리의 만화를 통합하며 필터는 전체 또는 특정 라이브러리로 제한한다. 앱/확장 표시 이름은 **BookOrbit**, 소스 이름은 **BookOrbit I / II / III**다. 기존 패키지·서명·소스 ID·작품 binding과 암호화 저장 경로는 보존했다.
+
+구현 파일: `settings/SettingsScreen.kt`, `settings/Connection.kt`, `BookOrbitSource.kt`, `LibraryFilter.kt`, `repository/LibraryCataloguePager.kt`, `model/Identity.kt`, `AndroidManifest.xml`. 통합 순서는 라이브러리 ID순 + 각 라이브러리의 제목순이며 페이지당 최대 40작품이다. 다른 라이브러리의 동일 seriesId도 각각 유지한다. 경계 페이지·빈 라이브러리·권한 오류·캐시 제한 정책은 [ARCHITECTURE.md](ARCHITECTURE.md)에 기록했다.
+
+실행한 기능 테스트는 로컬 JVM 단위 테스트뿐이며 **48개 통과, 실패/오류/skip 0**이다. ProtocolTest 16, ComicFormatTest 3, FilteredPagerTest 6, LibraryCataloguePagerTest 8, IdentityAndSettingsTest 5, LibrarySelectionTest 10개다. MockWebServer는 합성 응답만 사용했다. `LiveServerTest`는 기본 작업에서 제외되어 실행되지 않았다. 에뮬레이터·기기·실서버 호출, 설치 및 공개 배포는 하지 않았다.
+
+앞선 APK 빌드 요청에 따라 수정된 소스도 Debug/Release로 다시 빌드했다. 작업 시작 전부터 있던 wrapper의 Gradle 9.7.1 URL/8.14.4 체크섬 변경은 그대로 두고 캐시된 `/home/ubuntu/.gradle/wrapper/dists/gradle-8.14.4-bin/92wwslzcyst3phie3o264zltu/gradle-8.14.4/bin/gradle`을 사용했다. `--offline :app:testDebugUnitTest`와 기존 비공개 signing properties를 지정한 `--offline :app:assembleDebug :app:assembleRelease` 모두 BUILD SUCCESSFUL이다. Release 필수 Lint도 통과했다.
+
+| 산출물 | 상대 경로 | SHA-256 |
+|---|---|---|
+| 설치용 Release (97,702 bytes) | `artifacts/bookorbit-1.6.3-release.apk` | `fb1d4dd7fbe812461db6205747f2f0ac076c933e8f417a5e39a8c7f7de5f9c83` |
+| 개발용 Debug (141,589 bytes) | `artifacts/bookorbit-1.6.3-debug.apk` | `c1a2f14ce740bd022a98470350cebf59e3a20ee2d7f5b2fc1d61c95ba6b43a90` |
+
+Release 절대 경로: `/home/ubuntu/workspace/mihon-bookorbit-extension/artifacts/bookorbit-1.6.3-release.apk`. 체크섬 파일: `artifacts/SHA256SUMS-1.6.3`. 검사 기록: `artifacts/apk-verification-1.6.3.txt`, `artifacts/manifest-1.6.3.txt`. SDK 36.0.0의 apksigner와 aapt2로 APK v2 서명, 패키지 `app.bookorbit.mihonext`, 표시명 BookOrbit, 버전 1.6.3 (3), extensionLib float 1.6을 확인했다. Release 인증서는 기존 핀 `bf3c650b87f278df0f01ecb458345f7a1c231a5f7634a29a2274da63cf0b1b10`과 같다.
+
+Release APK로 기존 Release를 업데이트하고 Mihon에서 요청하면 신뢰 승인한다. 연결 확인을 실행한 뒤 소스 화면에 다시 진입하면 전체 라이브러리와 새 필터가 적용된다. 실제 UI·읽기 동작과 BookOrbit 3.8.0 이외 버전은 이번에 검증하지 않았다. 공개 스토어 피드는 기존 배포본을 유지하며 이번 명칭 변경을 아직 포함하지 않는다. `git diff --check`는 통과했다.
+
+## 과거 1.6.2 (versionCode 2)
 
 검증일: 2026-11-18 (Asia/Seoul). 고정 3소스, 라이브러리 필터, 기본 라이브러리와 저장된 작품의 연결 분리, 라이브러리별 이미지 인증을 구현했다. 기존 슬롯 1~3의 ID와 binding은 유지하며 4~6번 슬롯은 생성하지 않는다. 변경 구현은 `BookOrbitSourceFactory.kt`, `BookOrbitSource.kt`, `LibraryFilter.kt`, `settings/Connection.kt`, `SettingsStore.kt`, `SettingsScreen.kt`, `api/BookOrbitHttp.kt`, `model/Identity.kt`에 있다.
 

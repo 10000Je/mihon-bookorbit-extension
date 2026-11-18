@@ -30,14 +30,14 @@ class BookOrbitHttp(private val connection: (HttpUrl) -> Connection) : Intercept
         if (url.scheme != root.scheme || url.host != root.host || url.port != root.port ||
             !url.encodedPath.startsWith(root.encodedPath + "api/v1/") ||
             url.fragment != "bo=${config.binding}") {
-            throw ApiFailure(FailureKind.CONFIGURATION, "이미지 또는 요청이 현재 슬롯 연결에 속하지 않습니다.")
+            throw ApiFailure(FailureKind.CONFIGURATION, "이미지 또는 요청이 현재 소스 연결에 속하지 않습니다.")
         }
         if (config.apiKey.isBlank() || config.apiKey.any { it <= ' ' || it >= '\u007f' }) throw ApiFailure.configuration()
         val authenticated = request.newBuilder()
             .url(url.newBuilder().fragment(null).build())
             .removeHeader("Cookie").removeHeader("X-Api-Key")
             .header("Authorization", "Bearer ${config.apiKey}")
-            .header("User-Agent", "BookOrbitIndependent/1.6.2")
+            .header("User-Agent", "BookOrbit/1.6.3")
             .build()
         var attempt = 0
         while (true) {

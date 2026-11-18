@@ -14,26 +14,29 @@ class IdentityAndSettingsTest {
         return state.copy(draft = draft, discovery = Discovery(draft, account, listOf(Library(lib, name)), 1))
     }
 
+    private fun SlotState.applyVerified() = applyDiscovery(discovery ?: throw ApiFailure.configuration())
+
     @Test fun libraryRenameReorderAndKeyRotationPreserveSourceAndWorkIdentity() {
-        val first = discovered().bind(Library(1, "A"))
+        val first = discovered().applyVerified()
         val rotated = Draft(first.draft.server, "bok_" + "b".repeat(49))
-        val renamed = first.copy(draft = rotated, discovery = Discovery(rotated, 1, listOf(Library(2, "B"), Library(1, "New")), 2)).bind(Library(1, "New"))
+        val renamed = first.copy(draft = rotated, discovery = Discovery(rotated, 1, listOf(Library(2, "B"), Library(1, "New")), 2)).applyVerified()
         assertEquals(first.active!!.binding, renamed.active!!.binding)
         assertEquals("New", renamed.active!!.libraryName)
         assertEquals(641_300_700_001L, Identity.sourceId(1))
         assertEquals(listOf(641_300_700_001L, 641_300_700_002L, 641_300_700_003L),
             (1..Identity.SOURCE_COUNT).map(Identity::sourceId))
         assertThrows(IllegalArgumentException::class.java) { Identity.sourceId(4) }
+        assertEquals(listOf("BookOrbit I", "BookOrbit II", "BookOrbit III"), (1..3).map(Identity::sourceName))
     }
 
     @Test fun serverAccountAndLibraryChangesCannotAttachOldChaptersToNewData() {
-        val first = discovered().bind(Library(1, "A"))
+        val first = discovered().applyVerified()
         val original = first.active!!
         val url = Identity.work(original.binding, 1, "series", 19)
         val chapter = Identity.chapter(url, 11, 22)
         for (changed in listOf(discovered(server = "https://other.example/", state = first),
             discovered(account = 2, state = first), discovered(lib = 2, state = first))) {
-            val next = changed.bind(changed.discovery!!.libraries.single()).active!!
+            val next = changed.applyVerified().active!!
             assertNotEquals(original.binding, next.binding)
             assertThrows(IOException::class.java) { Identity.parse(chapter, next.binding, next.libraryId) }
         }
@@ -41,17 +44,17 @@ class IdentityAndSettingsTest {
     }
 
     @Test fun restoringPreviousConnectionRestoresHistoryButDoesNotRetainOldKeys() {
-        val first = discovered().bind(Library(1, "A"))
-        val other = discovered(lib = 2, state = first).bind(Library(2, "B"))
+        val first = discovered().applyVerified()
+        val other = discovered(lib = 2, state = first).applyVerified()
         assertTrue(other.previous.all { it.apiKey.isEmpty() })
-        val restored = discovered(state = other).bind(Library(1, "A"))
+        val restored = discovered(state = other).applyVerified()
         assertEquals(first.active!!.binding, restored.active!!.binding)
     }
 
-    @Test fun staleDiscoveryAndUnknownLibrariesAreRejected() {
+    @Test fun staleDiscoveryAndInvalidLibraryRegistriesAreRejected() {
         val state = discovered()
-        assertThrows(ApiFailure::class.java) { state.bind(Library(99, "absent")) }
-        assertThrows(ApiFailure::class.java) { state.copy(draft = Draft("https://changed.example/", key)).bind(Library(1, "A")) }
+        assertThrows(ApiFailure::class.java) { state.applyDiscovery(state.discovery!!.copy(libraries = listOf(Library(0, "invalid")))) }
+        assertThrows(ApiFailure::class.java) { state.copy(draft = Draft("https://changed.example/", key)).applyVerified() }
     }
 
     @Test fun credentialsAndQueryUrlsAreRejectedAndSubpathIsPreserved() {

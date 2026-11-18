@@ -2,6 +2,7 @@ package app.bookorbit.mihonext.api
 
 import app.bookorbit.mihonext.model.Identity
 import app.bookorbit.mihonext.repository.BookOrbitRepository
+import app.bookorbit.mihonext.repository.LibraryCataloguePager
 import app.bookorbit.mihonext.settings.Connection
 import app.bookorbit.mihonext.settings.Draft
 import app.bookorbit.mihonext.settings.Discovery
@@ -78,10 +79,10 @@ class ProtocolTest {
         }
     }
 
-    @Test fun multipleLibrariesKeepTheirOwnCatalogueAndAuthenticatedImagesAfterDefaultChanges() = runBlocking {
+    @Test fun popularCombinesAllLibrariesAndKeepsTheirAuthenticatedImagesAfterRefresh() = runBlocking {
         val draft = Draft(connection.server, key)
         val libraries = listOf(Library(7, "Comics"), Library(8, "Manga"))
-        var settings = SlotState(draft, Discovery(draft, 1, libraries, 1)).bind(libraries.first())
+        var settings = SlotState(draft).applyDiscovery(Discovery(draft, 1, libraries, 1))
         val scoped = client.newBuilder().apply {
             interceptors().clear()
             addInterceptor(BookOrbitHttp { settings.connectionForImage(it) })
@@ -92,13 +93,18 @@ class ProtocolTest {
         val secondRepo = BookOrbitRepository(second, BookOrbitApi(second, scoped))
         respond(books(card(11, cbz), 1, 0, 40))
         respond(books(card(11, cbz).replace("\"libraryId\":7", "\"libraryId\":8"), 1, 0, 40))
-        assertEquals(7L, firstRepo.catalogue(1, "same query").items.single().libraryId)
-        assertEquals(8L, secondRepo.catalogue(1, "same query").items.single().libraryId)
+        val pager = LibraryCataloguePager(load = { config, query, page ->
+            (if (config.libraryId == 7L) firstRepo else secondRepo).catalogue(page, query)
+        })
+        val all = pager.page(settings.connections(), "same query", 1)
+        assertEquals(listOf(7L, 8L), all.items.map { it.connection.libraryId })
+        assertEquals(listOf(7L, 8L), all.items.map { it.book.libraryId })
+        assertFalse(all.hasNextPage)
         assertEquals("/orbit/api/v1/libraries/7/books", server.takeRequest().target)
         assertEquals("/orbit/api/v1/libraries/8/books", server.takeRequest().target)
         assertEquals(2, server.requestCount)
 
-        settings = settings.bind(libraries.last())
+        settings = settings.applyDiscovery(Discovery(draft, 1, libraries.reversed(), 2))
         for (config in listOf(first, second)) {
             for (path in listOf("books/11/cover", "cbz/files/22/pages/0")) {
                 respond("image-bytes")
@@ -113,7 +119,7 @@ class ProtocolTest {
         val foreign = first.url("books/11/cover").newBuilder().host("foreign.example").build()
         assertThrows(ApiFailure::class.java) { scoped.newCall(Request.Builder().url(foreign).build()).execute() }
         val changed = draft.copy(server = "https://other.example/")
-        settings = settings.copy(draft = changed, discovery = Discovery(changed, 1, libraries, 2)).bind(libraries.first())
+        settings = settings.copy(draft = changed).applyDiscovery(Discovery(changed, 1, libraries, 3))
         assertThrows(ApiFailure::class.java) {
             scoped.newCall(Request.Builder().url(first.url("books/11/cover")).build()).execute()
         }

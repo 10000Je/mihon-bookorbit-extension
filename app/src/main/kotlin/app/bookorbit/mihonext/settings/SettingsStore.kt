@@ -75,5 +75,5 @@ object SettingsStore {
     }
 
     private fun storageFailure() = ApiFailure(FailureKind.CONFIGURATION,
-        "보안 설정을 읽거나 저장할 수 없습니다. 설정에서 이 슬롯의 연결을 초기화한 후 다시 연결하세요.")
+        "보안 설정을 읽거나 저장할 수 없습니다. 설정에서 이 소스의 연결을 초기화한 후 다시 연결하세요.")
 }

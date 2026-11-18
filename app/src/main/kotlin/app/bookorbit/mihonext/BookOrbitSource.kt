@@ -7,6 +7,7 @@ import app.bookorbit.mihonext.api.BookOrbitHttp
 import app.bookorbit.mihonext.model.BookCard
 import app.bookorbit.mihonext.model.Identity
 import app.bookorbit.mihonext.repository.BookOrbitRepository
+import app.bookorbit.mihonext.repository.LibraryCataloguePager
 import app.bookorbit.mihonext.settings.Connection
 import app.bookorbit.mihonext.settings.SettingsScreen
 import app.bookorbit.mihonext.settings.SettingsStore
@@ -22,7 +23,7 @@ import java.time.Instant
 
 class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource {
     override val id: Long = Identity.sourceId(slot)
-    override val name: String = "BookOrbit · 슬롯 $slot"
+    override val name: String = Identity.sourceName(slot)
     override val lang = "all"
     override val supportsLatest = false
     override val baseUrl: String get() = runCatching { SettingsStore.read(slot).active?.server?.trimEnd('/') }
@@ -35,6 +36,9 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
 
     private data class BoundRepository(val connection: Connection, val repository: BookOrbitRepository)
     private val repositories = LinkedHashMap<String, BoundRepository>(4, 0.75f, true)
+    private val cataloguePager = LibraryCataloguePager(load = { connection, query, page ->
+        repository(connection).repository.catalogue(page, query)
+    })
     @Synchronized private fun repository(config: Connection): BoundRepository {
         return repositories[config.binding]?.takeIf { it.connection == config } ?: BoundRepository(
             config, BookOrbitRepository(config, BookOrbitApi(config, client)),
@@ -51,10 +55,11 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
 
     private suspend fun catalogue(page: Int, query: String, filter: LibraryFilter? = null): MangasPage = withContext(Dispatchers.IO) {
         val settings = SettingsStore.read(slot)
-        val current = repository(filter?.connection(settings) ?: settings.connection())
-        val result = withTimeoutOrNull(90_000) { current.repository.catalogue(page, query) } ?: operationTimeout()
-        ensureCurrent(current.connection)
-        MangasPage(result.items.map { manga(it, current.connection) }, result.hasNextPage)
+        if (settings.active == null) throw ApiFailure.configuration()
+        val connections = filter?.connections(settings) ?: settings.connections()
+        val result = withTimeoutOrNull(90_000) { cataloguePager.page(connections, query, page) } ?: operationTimeout()
+        if (SettingsStore.read(slot).connections() != settings.connections()) throw ApiFailure.configuration()
+        MangasPage(result.items.map { manga(it.book, it.connection) }, result.hasNextPage)
     }
 
     override suspend fun getMangaUpdate(

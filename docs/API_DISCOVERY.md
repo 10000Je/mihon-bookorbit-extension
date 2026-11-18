@@ -62,10 +62,14 @@
 - 공식 Mihon **v0.21.3**, 커밋 `feadad5e1e2bf638be6e2ca317d11657b09d4596`의 [`app/src/main/java/eu/kanade/tachiyomi/ui/browse/source/browse/BrowseSourceScreen.kt`](https://github.com/mihonapp/mihon/blob/feadad5e1e2bf638be6e2ca317d11657b09d4596/app/src/main/java/eu/kanade/tachiyomi/ui/browse/source/browse/BrowseSourceScreen.kt): Popular는 항상 표시하고, Latest는 `supportsLatest`일 때, Filter는 필터 목록이 비어 있지 않을 때 표시한다. 필터는 기본 선택 패널이며 적용 시 검색 경로로 전달된다. Popular를 누르면 필터를 초기화한다.
 - 새 서버 엔드포인트는 추가하지 않는다. 기존 `GET libraries` 결과를 연결 적용 시 캐시하고, 선택한 ID로 기존 `POST libraries/{libraryId}/books`를 호출한다. 1.6.2 변경의 검증은 합성 응답 기반 로컬 JVM 단위 테스트로 제한하며 실서버/기기 재검증은 하지 않는다.
 
+## 전체 라이브러리 탐색 (1.6.3)
+
+새 엔드포인트를 추측하지 않고 기존에 확인한 `GET libraries`와 `POST libraries/{libraryId}/books`를 사용한다. 인기는 접근 가능한 라이브러리 전체의 결과를 로컬에서 순서대로 통합한다. 특정 라이브러리 필터는 동일한 경로를 해당 ID 하나에만 호출한다. Connection은 작품마다 유지하고 동일 seriesId가 여러 라이브러리에 있어도 각각 보존한다. 순서·페이지 경계·실패 처리·캐시 상한은 [ARCHITECTURE.md](ARCHITECTURE.md)에 기록했다. 이번 통합 동작은 합성 응답 기반 단위 테스트로 검증하며 실서버 지원 범위를 새로 주장하지 않는다.
+
 ## 인증·이미지·재시도
 
 - 비밀번호 로그인/JWT/쿠키 갱신 대신 **서버에서 발급한 읽기 전용 API 키**를 사용한다. 키의 수명은 서버가 관리한다. 401은 만료·폐기·계정/전역 설정 문제이므로 같은 키로 반복 재시도하지 않고 교체를 안내한다. 이 모드에는 refresh token이 없다.
-- `auth/me`와 `libraries`로 연결을 확인한 다음 선택한 라이브러리를 적용한다. 설정 초안과 실제 읽기에 사용하는 연결을 분리한다.
+- `auth/me`와 `libraries`로 연결을 확인하고 성공하면 접근 가능한 모든 라이브러리를 자동으로 적용한다. 별도의 기본 라이브러리 선택/적용 기능은 없다. 설정 초안과 실제 읽기에 사용하는 연결을 분리한다.
 - HttpSource의 `client`를 표지/페이지/API에 공통 사용한다. 정적인 `headers`에 키를 넣지 않고 인터셉터에서 현재 연결 범위를 검사한 뒤 넣는다. 리다이렉트·쿠키·다른 origin/기본 경로·이전 연결 이미지를 거부한다.
 - 이미지 URL의 `#bo=불변연결ID`는 로컬 범위 확인용이다. 서버에 보내기 전에 제거하며 비밀이나 쿼리스트링이 아니다. 재매핑 후 오래된 표지 URL로 새 자격 증명을 보내지 않는다.
 - 429/502/503/504만 최대 2회 재시도. Retry-After 초/HTTP 날짜를 최대 5초까지 존중한다. 더 긴 서버 대기는 재요청하지 않고 오류를 안내한다. 연결/읽기/전체 호출 제한은 10/30/60초이다. JSON 본문을 읽는 중에도 취소하면 Call을 취소한다.

@@ -21,8 +21,8 @@ android {
         applicationId = "app.bookorbit.mihonext"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.6.2"
+        versionCode = 3
+        versionName = "1.6.3"
     }
 
     signingConfigs {

@@ -86,6 +86,11 @@ def generate(args):
     base_id = int(base_match[1].replace("_", ""))
     count = int(count_match[1])
     require(count in (3, 6) and lang_match[1] == "all", "Slot/language policy changed: review feed generation")
+    if "Identity.sourceName(slot)" in source:
+        require(count == 3 and 'listOf("I", "II", "III")' in identity, "Source naming policy changed: review feed generation")
+        source_names = ["BookOrbit I", "BookOrbit II", "BookOrbit III"]
+    else:
+        source_names = [f"BookOrbit · 슬롯 {slot}" for slot in range(1, count + 1)]
     warnings = {"0": "UNSPECIFIED", "1": "SAFE", "2": "MIXED", "3": "NSFW"}
     content_warning = warnings[metadata["tachiyomix.contentWarning"]]
 
@@ -104,12 +109,12 @@ def generate(args):
         "versionName": version,
         "contentWarning": content_warning,
         "sources": [
-            {"id": base_id + slot, "name": f"BookOrbit · 슬롯 {slot}", "language": lang_match[1], "homeUrl": "", "mirrorUrls": [], "message": None}
+            {"id": base_id + slot, "name": source_names[slot - 1], "language": lang_match[1], "homeUrl": "", "mirrorUrls": [], "message": None}
             for slot in range(1, count + 1)
         ],
     }
     store = {
-        "name": "BookOrbit Independent for Mihon",
+        "name": metadata["tachiyomix.name"] + " for Mihon",
         "badgeLabel": "BookOrbit",
         "signingKey": pinned,
         "contact": {"website": website, "discord": None},
