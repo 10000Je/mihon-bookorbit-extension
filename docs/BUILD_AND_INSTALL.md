@@ -23,7 +23,7 @@
 ./gradlew :app:testDebugUnitTest
 ```
 
-`LiveServerTest`는 기본 작업에서 제외하므로 실서버 설정 환경변수가 있어도 실행되지 않습니다. 에뮬레이터·기기 호출과 APK 빌드·설치·서명 검증은 별도 사용자 요청이 있을 때만 수행합니다. 현재 1.6.2 변경에서는 로컬 JVM 단위 테스트만 실행합니다. 로컬 wrapper URL과 체크섬에 기존 사용자 변경이 있어 캐시된 Gradle 8.14.4를 직접 사용한 내역은 [VERIFICATION.md](VERIFICATION.md)에 기록했습니다.
+`LiveServerTest`는 기본 작업에서 제외하므로 실서버 설정 환경변수가 있어도 실행되지 않습니다. 에뮬레이터·기기 호출과 APK 빌드·설치·서명 검증은 별도 사용자 요청이 있을 때만 수행합니다. 1.6.2는 기능 테스트를 로컬 JVM 단위 테스트로 제한했고, 후속 APK 빌드 요청으로 Debug/Release 빌드·서명 검사를 추가 실행했습니다. 로컬 wrapper URL과 체크섬에 기존 사용자 변경이 있어 캐시된 Gradle 8.14.4를 직접 사용한 내역은 [VERIFICATION.md](VERIFICATION.md)에 기록했습니다.
 
 ## 별도 빌드 요청 시 참고 명령
 
@@ -80,9 +80,19 @@ ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
 
 fixture 구성: 첫 라이브러리에 EPUB 전용 작품, CBZ 시리즈, 실제 RAR 기반 CBR 시리즈, 실제 7z 기반 CB7 시리즈, EPUB+CBZ 혼합 작품, 비시리즈 CBZ 도서. 다른 두 라이브러리에 각각 CBZ 작품 하나. 각 만화는 원본 생성 PNG 3장을 포함합니다. 테스트는 EPUB 검색 제외, 총 7작품, 각 챕터와 페이지 수, 21개 PNG 실제 바이트, 인증된 표지를 확인합니다. 잘못된 TLS 구현으로 시험을 통과시키지 않으며 신뢰 인증서는 테스트 클라이언트에만 추가합니다. 프로덕션 소스는 기본 TLS 검증을 유지합니다.
 
-## 과거 1.6.1 산출물 및 현재 단위 테스트 보고서
+## 현재 1.6.2 산출물
 
-1.6.2 변경의 새 APK는 생성하지 않았습니다. 아래 APK·서명·Lint 기록은 기존 1.6.1 기준입니다.
+- 설치용 Release: `artifacts/bookorbit-independent-1.6.2-release.apk` (기존 Release와 동일한 서명)
+- 개발용 Debug: `artifacts/bookorbit-independent-1.6.2-debug.apk`
+- 체크섬: `artifacts/SHA256SUMS-1.6.2`
+- Manifest·서명·클래스 검사: `artifacts/apk-verification-1.6.2.txt`
+- 단위 테스트 보고서: `app/build/reports/tests/testDebugUnitTest/index.html`
+
+Release APK를 Android에서 열어 설치한 뒤 Mihon에서 신뢰 승인이 요청되면 승인합니다. 이번에 기기 설치나 읽기 검증은 실행하지 않았습니다. 공개 Releases/스토어는 아직 기존 버전입니다.
+
+## 과거 1.6.1 산출물
+
+아래 APK·서명·Lint 기록은 기존 1.6.1 기준입니다.
 
 - 설치용 release: `artifacts/bookorbit-independent-1.6.1-release.apk`
 - 개발용 debug: `artifacts/bookorbit-independent-1.6.1-debug.apk`

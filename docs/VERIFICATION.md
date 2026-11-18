@@ -4,7 +4,7 @@
 
 검증일: 2026-11-18 (Asia/Seoul). 고정 3소스, 라이브러리 필터, 기본 라이브러리와 저장된 작품의 연결 분리, 라이브러리별 이미지 인증을 구현했다. 기존 슬롯 1~3의 ID와 binding은 유지하며 4~6번 슬롯은 생성하지 않는다. 변경 구현은 `BookOrbitSourceFactory.kt`, `BookOrbitSource.kt`, `LibraryFilter.kt`, `settings/Connection.kt`, `SettingsStore.kt`, `SettingsScreen.kt`, `api/BookOrbitHttp.kt`, `model/Identity.kt`에 있다.
 
-실행 범위는 로컬 JVM 단위 테스트뿐이다. `LiveServerTest`는 Gradle 기본 테스트 작업에서 제외했다. 에뮬레이터·물리 기기·실서버를 호출하지 않았으며 APK 조립·서명·설치·릴리스 검증도 실행하지 않았다. 기존 배포 APK와 체크섬은 아래 과거 결과이고 **이번 변경의 산출물이 아니다**. 설치 가능한 새 APK와 새 체크섬은 생성하지 않았다.
+기능 테스트는 로컬 JVM 단위 테스트만 실행했고 `LiveServerTest`는 Gradle 기본 테스트 작업에서 제외했다. 이후 사용자의 명시적 APK 빌드 요청에 따라 Debug/Release APK 빌드 및 정적 Manifest·서명 검사를 추가로 실행했다. 에뮬레이터·물리 기기·실서버를 호출하지 않았고 APK 설치나 공개 배포는 하지 않았다. 아래 과거 1.6.1 배포 APK와 체크섬은 **이번 변경의 산출물이 아니다**.
 
 로컬 wrapper properties에 작업 시작 전부터 Gradle 9.7.1 URL과 기존 8.14.4 SHA-256이 함께 설정되어 있었다. 이 사용자 변경은 수정하지 않고, 캐시된 기존 고정 버전 Gradle 8.14.4로 `--offline :app:testDebugUnitTest`를 실행했다. 정확한 실행 파일은 `/home/ubuntu/.gradle/wrapper/dists/gradle-8.14.4-bin/92wwslzcyst3phie3o264zltu/gradle-8.14.4/bin/gradle`이다. 샌드박스의 네이티브 초기화 제한으로 승인 후 실행했다.
 
@@ -12,7 +12,22 @@
 
 결과: **BUILD SUCCESSFUL, JUnit 38개 통과, 실패 0, 오류 0, skip 0**. ComicFormatTest 3개, IdentityAndSettingsTest 5개, LibrarySelectionTest 8개, FilteredPagerTest 6개, ProtocolTest 16개다. `LiveServerTest`는 제외되어 실행 보고서 자체가 없다. 보고서는 `app/build/reports/tests/testDebugUnitTest/index.html`과 `app/build/test-results/testDebugUnitTest/`에 있다. `git diff --check`도 통과했다. SDK XML 형식 버전 안내와 기존 테스트의 불필요한 `!!` 경고가 있었으며 단위 테스트 실행에는 영향을 주지 않았다.
 
-스토어 생성 스크립트는 현재의 `Identity.SOURCE_COUNT=3` 및 과거 릴리스의 리터럴 6슬롯 소스를 모두 읽도록 수정했다. APK가 필요한 피드 생성·서명 검사는 이번 범위에서 실행하지 않았으며 기존 `repo/` 피드는 그대로 유지했다.
+스토어 생성 스크립트는 현재의 `Identity.SOURCE_COUNT=3` 및 과거 릴리스의 리터럴 6슬롯 소스를 모두 읽도록 수정했다. 피드 생성은 실행하지 않았으며 기존 `repo/` 피드는 그대로 유지했다.
+
+### 후속 요청으로 실행한 APK 빌드
+
+같은 캐시된 Gradle 8.14.4에 기존 비공개 서명 properties 경로를 `BOOKORBIT_SIGNING_PROPERTIES`로 지정하여 `--offline :app:assembleDebug :app:assembleRelease`를 실행했다. **BUILD SUCCESSFUL**, Release 필수 Lint 검사도 통과했다. 단위 테스트는 앞서 통과한 동일 소스로 재실행하지 않았다.
+
+| 산출물 | 상대 경로 | SHA-256 |
+|---|---|---|
+| 설치용 Release (92,442 bytes) | `artifacts/bookorbit-independent-1.6.2-release.apk` | `80071189f2d671970517ef7aac8de000dde8df1f3792ba25ebf3bfda382d1641` |
+| 개발용 Debug (132,145 bytes) | `artifacts/bookorbit-independent-1.6.2-debug.apk` | `871816039517e5802e76667e850dca5247f3e7fbdddae7c7111ec68e05d2658d` |
+
+Release 절대 경로: `/home/ubuntu/workspace/mihon-bookorbit-extension/artifacts/bookorbit-independent-1.6.2-release.apk`. 체크섬 파일: `artifacts/SHA256SUMS-1.6.2`. 검사 기록: `artifacts/apk-verification-1.6.2.txt`.
+
+`scripts/verify-apk.sh`와 SDK Build Tools 36.0.0의 `aapt2 dump xmltree`로 패키지 `app.bookorbit.mihonext`, versionName 1.6.2 / versionCode 2, minSdk 26 / targetSdk 35, backup 비활성화, Mihon 확장 기능·팩토리 및 extensionLib의 실제 float 1.6을 확인했다. Release와 Debug 모두 APK v2 서명 검증에 성공했다. Release 인증서 SHA-256은 기존 핀과 같은 `bf3c650b87f278df0f01ecb458345f7a1c231a5f7634a29a2274da63cf0b1b10`이다. 개인 키는 APK나 Git에 포함하지 않았다.
+
+설치 시 Release APK를 Android에서 열어 기존 Release를 업데이트하고, Mihon에서 요청하면 신뢰 승인한다. 변경된 필터 목록은 연결 확인 → 기본 라이브러리 적용 → 소스 재진입으로 갱신한다. 실제 설치·신뢰·탐색·읽기 동작은 이번에 검증하지 않았다.
 
 ## 아래는 과거 1.6.1 빌드·서버·기기 검증 기록
 
