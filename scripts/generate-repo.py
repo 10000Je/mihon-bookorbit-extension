@@ -75,13 +75,17 @@ def generate(args):
     factory = (source_root / "BookOrbitSourceFactory.kt").read_text()
     source = (source_root / "BookOrbitSource.kt").read_text()
     base_match = re.search(r"const val BASE_SLOT_SOURCE_ID = ([\d_]+)L", identity)
-    count_match = re.search(r"\(1\.\.(\d+)\)\.map", factory)
+    # Older release sources used a literal range; current sources share Identity.SOURCE_COUNT.
+    if "(1..Identity.SOURCE_COUNT).map" in factory:
+        count_match = re.search(r"const val SOURCE_COUNT = (\d+)", identity)
+    else:
+        count_match = re.search(r"\(1\.\.(\d+)\)\.map", factory)
     lang_match = re.search(r'override val lang = "([a-z]+)"', source)
     require(base_match and count_match and lang_match, "Source layout changed: review feed generation")
     require("return BASE_SLOT_SOURCE_ID + slot" in identity, "Source ID policy changed: review feed generation")
     base_id = int(base_match[1].replace("_", ""))
     count = int(count_match[1])
-    require(count == 6 and lang_match[1] == "all", "Slot/language policy changed: review feed generation")
+    require(count in (3, 6) and lang_match[1] == "all", "Slot/language policy changed: review feed generation")
     warnings = {"0": "UNSPECIFIED", "1": "SAFE", "2": "MIXED", "3": "NSFW"}
     content_warning = warnings[metadata["tachiyomix.contentWarning"]]
 

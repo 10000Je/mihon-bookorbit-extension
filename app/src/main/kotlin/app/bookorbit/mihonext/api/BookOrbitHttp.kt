@@ -8,6 +8,7 @@ import okhttp3.Callback
 import okhttp3.CookieJar
 import okhttp3.Dispatcher
 import okhttp3.Interceptor
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -20,10 +21,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /** Both API calls and host image requests pass through the same scoped client. */
-class BookOrbitHttp(private val connection: () -> Connection) : Interceptor {
+class BookOrbitHttp(private val connection: (HttpUrl) -> Connection) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val config = connection()
         val request = chain.request()
+        val config = connection(request.url)
         val root = ServerUrl.parse(config.server)
         val url = request.url
         if (url.scheme != root.scheme || url.host != root.host || url.port != root.port ||
@@ -36,7 +37,7 @@ class BookOrbitHttp(private val connection: () -> Connection) : Interceptor {
             .url(url.newBuilder().fragment(null).build())
             .removeHeader("Cookie").removeHeader("X-Api-Key")
             .header("Authorization", "Bearer ${config.apiKey}")
-            .header("User-Agent", "BookOrbitIndependent/1.6.1")
+            .header("User-Agent", "BookOrbitIndependent/1.6.2")
             .build()
         var attempt = 0
         while (true) {
@@ -72,7 +73,9 @@ class BookOrbitHttp(private val connection: () -> Connection) : Interceptor {
     companion object {
         private val dispatcher = Dispatcher().apply { maxRequests = 4; maxRequestsPerHost = 4 }
 
-        fun client(connection: () -> Connection): OkHttpClient = OkHttpClient.Builder()
+        fun client(connection: () -> Connection): OkHttpClient = scopedClient { connection() }
+
+        fun scopedClient(connection: (HttpUrl) -> Connection): OkHttpClient = OkHttpClient.Builder()
             .dispatcher(dispatcher)
             .connectTimeout(10, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS)
             .callTimeout(60, TimeUnit.SECONDS)

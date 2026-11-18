@@ -2,6 +2,7 @@ package app.bookorbit.mihonext.settings
 
 import app.bookorbit.mihonext.api.ApiFailure
 import app.bookorbit.mihonext.model.Library
+import app.bookorbit.mihonext.model.Identity
 import kotlinx.serialization.Serializable
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -23,17 +24,49 @@ import java.util.UUID
 @Serializable data class SlotState(
     val draft: Draft = Draft(), val discovery: Discovery? = null, val active: Connection? = null,
     val previous: List<Connection> = emptyList(),
+    // Registry entries omit credentials; connections resolve them from active.
+    val libraryBindings: List<Connection> = emptyList(),
 ) {
     fun bind(library: Library): SlotState {
         val found = discovery ?: throw ApiFailure.configuration()
         if (found.draft != draft || found.libraries.none { it.id == library.id }) throw ApiFailure.configuration()
-        val existing = (listOfNotNull(active) + previous).firstOrNull {
-            it.server == draft.server && it.principalId == found.principalId && it.libraryId == library.id
+        val known = listOfNotNull(active) + libraryBindings + previous
+        val bindings = found.libraries.distinctBy { it.id }.map { entry ->
+            val existing = known.firstOrNull {
+                it.server == draft.server && it.principalId == found.principalId && it.libraryId == entry.id
+            }
+            Connection(draft.server, "", found.principalId, entry.id, entry.name,
+                existing?.binding ?: UUID.randomUUID().toString().replace("-", ""))
         }
-        val next = Connection(draft.server, draft.apiKey, found.principalId, library.id, library.name,
-            existing?.binding ?: UUID.randomUUID().toString().replace("-", ""))
-        return copy(active = next, previous = (listOfNotNull(active) + previous)
-            .filter { it.binding != next.binding }.distinctBy { it.binding }.take(12).map { it.copy(apiKey = "") })
+        val next = bindings.first { it.libraryId == library.id }.copy(apiKey = draft.apiKey)
+        return copy(active = next, libraryBindings = bindings, previous = known
+            .filter { old -> bindings.none { it.binding == old.binding } }
+            .distinctBy { it.binding }.take(12).map { it.copy(apiKey = "") })
+    }
+
+    fun connections(): List<Connection> {
+        val current = active ?: return emptyList()
+        return (listOf(current) + libraryBindings).filter {
+            it.server == current.server && it.principalId == current.principalId
+        }.distinctBy { it.libraryId }.map { it.copy(apiKey = current.apiKey) }
+    }
+
+    fun connection(libraryId: Long? = null, binding: String? = null): Connection = connections()
+        .firstOrNull { (libraryId == null || it.libraryId == libraryId) && (binding == null || it.binding == binding) }
+        ?: throw ApiFailure.configuration()
+
+    fun connectionForWork(url: String): Connection {
+        val parts = url.split('/')
+        val current = connection(parts.getOrNull(4)?.toLongOrNull() ?: throw ApiFailure.configuration(),
+            parts.getOrNull(3) ?: throw ApiFailure.configuration())
+        Identity.parse(url, current.binding, current.libraryId)
+        return current
+    }
+
+    fun connectionForImage(url: HttpUrl): Connection {
+        val binding = url.fragment?.takeIf { it.startsWith("bo=") }?.removePrefix("bo=")
+            ?: throw ApiFailure.configuration()
+        return connection(binding = binding)
     }
 }
 

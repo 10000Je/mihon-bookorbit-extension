@@ -1,6 +1,22 @@
 # 빌드·검증 기록
 
-검증일: 2026-11-18 (Asia/Seoul). 모의 응답, 실제 서버, 실제 Mihon 앱의 검증을 구별한다. 물리 Android 단말을 사용한 시험은 하지 않았다.
+## 현재 변경: 1.6.2 (versionCode 2)
+
+검증일: 2026-11-18 (Asia/Seoul). 고정 3소스, 라이브러리 필터, 기본 라이브러리와 저장된 작품의 연결 분리, 라이브러리별 이미지 인증을 구현했다. 기존 슬롯 1~3의 ID와 binding은 유지하며 4~6번 슬롯은 생성하지 않는다. 변경 구현은 `BookOrbitSourceFactory.kt`, `BookOrbitSource.kt`, `LibraryFilter.kt`, `settings/Connection.kt`, `SettingsStore.kt`, `SettingsScreen.kt`, `api/BookOrbitHttp.kt`, `model/Identity.kt`에 있다.
+
+실행 범위는 로컬 JVM 단위 테스트뿐이다. `LiveServerTest`는 Gradle 기본 테스트 작업에서 제외했다. 에뮬레이터·물리 기기·실서버를 호출하지 않았으며 APK 조립·서명·설치·릴리스 검증도 실행하지 않았다. 기존 배포 APK와 체크섬은 아래 과거 결과이고 **이번 변경의 산출물이 아니다**. 설치 가능한 새 APK와 새 체크섬은 생성하지 않았다.
+
+로컬 wrapper properties에 작업 시작 전부터 Gradle 9.7.1 URL과 기존 8.14.4 SHA-256이 함께 설정되어 있었다. 이 사용자 변경은 수정하지 않고, 캐시된 기존 고정 버전 Gradle 8.14.4로 `--offline :app:testDebugUnitTest`를 실행했다. 정확한 실행 파일은 `/home/ubuntu/.gradle/wrapper/dists/gradle-8.14.4-bin/92wwslzcyst3phie3o264zltu/gradle-8.14.4/bin/gradle`이다. 샌드박스의 네이티브 초기화 제한으로 승인 후 실행했다.
+
+새 회귀 검증은 `LibrarySelectionTest`와 `ProtocolTest`에 있다. 필터/기본값 전환, 기존 작품·챕터·이미지, 이름·순서·키 회전, 다른 서버·계정 차단, 라이브러리 제거/복구, 구형 설정 호환, 12개를 넘는 현재 라이브러리의 식별자 유지, 두 라이브러리의 동일 검색어 요청 경로를 확인한다. ProtocolTest는 로컬 MockWebServer의 **합성 응답**만 사용한다.
+
+결과: **BUILD SUCCESSFUL, JUnit 38개 통과, 실패 0, 오류 0, skip 0**. ComicFormatTest 3개, IdentityAndSettingsTest 5개, LibrarySelectionTest 8개, FilteredPagerTest 6개, ProtocolTest 16개다. `LiveServerTest`는 제외되어 실행 보고서 자체가 없다. 보고서는 `app/build/reports/tests/testDebugUnitTest/index.html`과 `app/build/test-results/testDebugUnitTest/`에 있다. `git diff --check`도 통과했다. SDK XML 형식 버전 안내와 기존 테스트의 불필요한 `!!` 경고가 있었으며 단위 테스트 실행에는 영향을 주지 않았다.
+
+스토어 생성 스크립트는 현재의 `Identity.SOURCE_COUNT=3` 및 과거 릴리스의 리터럴 6슬롯 소스를 모두 읽도록 수정했다. APK가 필요한 피드 생성·서명 검사는 이번 범위에서 실행하지 않았으며 기존 `repo/` 피드는 그대로 유지했다.
+
+## 아래는 과거 1.6.1 빌드·서버·기기 검증 기록
+
+이하 내용은 이번 변경 이전의 기록이다. 과거 검증일: 2026-11-18 (Asia/Seoul). 모의 응답, 실제 서버, 실제 Mihon 앱의 검증을 구별한다. 물리 Android 단말을 사용한 시험은 하지 않았다.
 
 ## 산출물과 빌드
 

@@ -7,6 +7,7 @@ import android.util.AtomicFile
 import app.bookorbit.mihonext.api.ApiFailure
 import app.bookorbit.mihonext.api.BookOrbitApi
 import app.bookorbit.mihonext.api.FailureKind
+import app.bookorbit.mihonext.model.Identity
 import kotlinx.serialization.encodeToString
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -24,7 +25,7 @@ object SettingsStore {
     private val memory = HashMap<Int, SlotState>()
 
     @Synchronized fun read(slot: Int): SlotState {
-        require(slot in 1..6)
+        require(slot in 1..Identity.SOURCE_COUNT)
         return memory.getOrPut(slot) {
             val file = file(slot)
             if (!file.baseFile.exists()) SlotState() else try {
@@ -56,7 +57,7 @@ object SettingsStore {
     }
 
     @Synchronized fun erase(slot: Int) {
-        require(slot in 1..6)
+        require(slot in 1..Identity.SOURCE_COUNT)
         file(slot).delete()
         memory.remove(slot)
     }

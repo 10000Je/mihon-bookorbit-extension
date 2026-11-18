@@ -21,8 +21,8 @@ android {
         applicationId = "app.bookorbit.mihonext"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.6.1"
+        versionCode = 2
+        versionName = "1.6.2"
     }
 
     signingConfigs {
@@ -38,6 +38,11 @@ android {
             isMinifyEnabled = false
             if (signingFile != null) signingConfig = signingConfigs.getByName("localRelease")
         }
+    }
+
+    testOptions.unitTests.all {
+        // A regular unit-test run must never contact a real BookOrbit server.
+        it.exclude("**/LiveServerTest*")
     }
 
     compileOptions {
@@ -57,6 +62,8 @@ dependencies {
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     compileOnly("com.github.mihonapp:injekt:91edab2317")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    // Filter.Select is pure Kotlin; no host HTTP/Rx/HTML dependencies are needed by these tests.
+    testImplementation("com.github.mihonapp:tachiyomix:1.6.0") { isTransitive = false }
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     testImplementation("com.squareup.okhttp3:okhttp:5.4.0")
     testImplementation("com.squareup.okhttp3:mockwebserver3:5.4.0")

@@ -42,13 +42,13 @@ class SettingsScreen(private val slot: Int, private val invalidate: () -> Unit) 
         action("연결 확인 / 라이브러리 재검색", "키의 계정과 접근 가능한 라이브러리를 확인합니다. 선택 전에는 기존 연결이 유지됩니다.") {
             connect(context)
         }
-        action("라이브러리 선택 / 적용", "캐시된 라이브러리에서 선택합니다. 연결 대상 변경 시 기존 작품은 보호되며 자동 이관되지 않습니다.") {
+        action("기본 라이브러리 선택 / 적용", "인기에 표시할 라이브러리를 선택하고 연결을 적용합니다. 나머지 라이브러리는 소스의 필터에서 선택합니다.") {
             choose(context)
         }
-        action("현재 연결 정보", "라이브러리 표시명은 새로고침 후 갱신됩니다. Mihon 소스 목록에는 앱 재시작이 필요할 수 있습니다.") {
+        action("현재 연결 정보", "소스는 3개입니다. 라이브러리를 갱신한 뒤에는 소스 화면에 다시 진입하세요.") {
             val state = SettingsStore.read(slot)
             AlertDialog.Builder(context).setTitle("슬롯 $slot").setMessage(
-                state.active?.let { "라이브러리: ${it.libraryName}\nID: ${it.libraryId}\n소스 ID: ${app.bookorbit.mihonext.model.Identity.sourceId(slot)}\n\n인기: 전체 만화 목록\n최신: 지원 안 함\n\n서버나 계정을 바꾸면 새 연결로 분리합니다. 원래 연결을 다시 선택하면 최근 연결 12개까지 식별자를 복원합니다." }
+                state.active?.let { "기본 라이브러리: ${it.libraryName}\nID: ${it.libraryId}\n선택 가능한 라이브러리: ${state.connections().size}개\n소스 ID: ${app.bookorbit.mihonext.model.Identity.sourceId(slot)}\n\n인기: 기본 라이브러리의 만화 목록\n필터: 라이브러리 선택\n최신: 지원 안 함\n\n필터나 기본 라이브러리를 바꿔도 같은 서버·계정의 저장 작품은 원래 라이브러리에서 읽습니다. 서버나 계정을 바꾸면 새 연결로 분리합니다. 이전 연결은 최근 12개까지 식별자를 복원합니다." }
                     ?: "아직 연결되지 않았습니다. 서버 URL과 키를 입력한 뒤 연결 확인 및 라이브러리 선택을 실행하세요.",
             ).setPositiveButton("확인", null).show()
         }
@@ -84,14 +84,9 @@ class SettingsScreen(private val slot: Int, private val invalidate: () -> Unit) 
                 }
                 SettingsStore.update(slot) { state ->
                     if (state.draft != draft) throw ApiFailure(FailureKind.CONFIGURATION, "연결 설정이 변경되었습니다. 다시 확인하세요.")
-                    val active = state.active
-                    val renamed = discovery.libraries.firstOrNull { it.id == active?.libraryId }
-                    state.copy(discovery = discovery, active = if (active != null && renamed != null &&
-                        active.server == draft.server && active.principalId == discovery.principalId) {
-                        active.copy(libraryName = renamed.name)
-                    } else active)
+                    state.copy(discovery = discovery)
                 }
-                toast(context, "연결 성공: 라이브러리 ${discovery.libraries.size}개. 라이브러리 선택 / 적용을 실행하세요.")
+                toast(context, "연결 성공: 라이브러리 ${discovery.libraries.size}개. 기본 라이브러리 선택 / 적용을 실행하세요.")
             } catch (e: CancellationException) { throw e }
             catch (e: ApiFailure) { toast(context, e.message ?: "연결 실패") }
             catch (_: Exception) { toast(context, "연결 확인을 완료하지 못했습니다.") }
@@ -112,7 +107,7 @@ class SettingsScreen(private val slot: Int, private val invalidate: () -> Unit) 
             toast(context, "접근 가능한 라이브러리가 없습니다. 서버 계정과 API 키의 라이브러리 범위를 확인하세요.")
             return
         }
-        AlertDialog.Builder(context).setTitle("라이브러리 선택")
+        AlertDialog.Builder(context).setTitle("기본 라이브러리 선택")
             .setItems(discovery.libraries.map { "${it.name} (#${it.id})" }.toTypedArray()) { _, index ->
                 val library = discovery.libraries[index]
                 val apply = {
@@ -122,13 +117,13 @@ class SettingsScreen(private val slot: Int, private val invalidate: () -> Unit) 
                             current.bind(library)
                         }
                         invalidate()
-                        toast(context, "라이브러리를 적용했습니다. 소스 목록 이름은 Mihon 재시작 후 갱신될 수 있습니다.")
+                        toast(context, "연결을 적용했습니다. 소스 화면에 다시 진입한 뒤 필터에서 라이브러리를 선택하세요.")
                     }
                 }
                 val active = state.active
-                if (active != null && (active.server != state.draft.server || active.principalId != discovery.principalId || active.libraryId != library.id)) {
+                if (active != null && (active.server != state.draft.server || active.principalId != discovery.principalId)) {
                     AlertDialog.Builder(context).setTitle("슬롯 연결 대상 변경")
-                        .setMessage("기존 작품은 이전 연결에 보존되며 새 라이브러리로 연결되지 않습니다. 다른 빈 슬롯을 사용하는 편이 편리합니다. 변경할까요?")
+                        .setMessage("서버 또는 계정이 바뀝니다. 기존 작품은 이전 연결에 보존되며 새 연결로 이관되지 않습니다. 변경할까요?")
                         .setNegativeButton("취소", null).setPositiveButton("변경") { _, _ -> apply() }.show()
                 } else apply()
             }.setNegativeButton("취소", null).show()
@@ -146,7 +141,7 @@ class SettingsScreen(private val slot: Int, private val invalidate: () -> Unit) 
         if (secret) dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                try { save(input.text.toString()); input.text.clear(); dialog.dismiss(); toast(context, "저장했습니다. 연결 확인 후 라이브러리를 적용하세요.") }
+                try { save(input.text.toString()); input.text.clear(); dialog.dismiss(); toast(context, "저장했습니다. 연결 확인 후 기본 라이브러리를 적용하세요.") }
                 catch (e: ApiFailure) { toast(context, e.message ?: "설정 오류") }
                 catch (_: Exception) { toast(context, "설정을 저장하지 못했습니다.") }
             }

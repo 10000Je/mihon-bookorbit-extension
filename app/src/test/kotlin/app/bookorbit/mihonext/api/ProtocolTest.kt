@@ -3,6 +3,10 @@ package app.bookorbit.mihonext.api
 import app.bookorbit.mihonext.model.Identity
 import app.bookorbit.mihonext.repository.BookOrbitRepository
 import app.bookorbit.mihonext.settings.Connection
+import app.bookorbit.mihonext.settings.Draft
+import app.bookorbit.mihonext.settings.Discovery
+import app.bookorbit.mihonext.settings.SlotState
+import app.bookorbit.mihonext.model.Library
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import mockwebserver3.MockResponse
@@ -72,6 +76,48 @@ class ProtocolTest {
             assertNull(sent.headers["Cookie"]); assertNull(sent.headers["X-Api-Key"])
             assertFalse(sent.target.contains(key)); assertFalse(sent.target.contains("#"))
         }
+    }
+
+    @Test fun multipleLibrariesKeepTheirOwnCatalogueAndAuthenticatedImagesAfterDefaultChanges() = runBlocking {
+        val draft = Draft(connection.server, key)
+        val libraries = listOf(Library(7, "Comics"), Library(8, "Manga"))
+        var settings = SlotState(draft, Discovery(draft, 1, libraries, 1)).bind(libraries.first())
+        val scoped = client.newBuilder().apply {
+            interceptors().clear()
+            addInterceptor(BookOrbitHttp { settings.connectionForImage(it) })
+        }.build()
+        val first = settings.connection(7)
+        val second = settings.connection(8)
+        val firstRepo = BookOrbitRepository(first, BookOrbitApi(first, scoped))
+        val secondRepo = BookOrbitRepository(second, BookOrbitApi(second, scoped))
+        respond(books(card(11, cbz), 1, 0, 40))
+        respond(books(card(11, cbz).replace("\"libraryId\":7", "\"libraryId\":8"), 1, 0, 40))
+        assertEquals(7L, firstRepo.catalogue(1, "same query").items.single().libraryId)
+        assertEquals(8L, secondRepo.catalogue(1, "same query").items.single().libraryId)
+        assertEquals("/orbit/api/v1/libraries/7/books", server.takeRequest().target)
+        assertEquals("/orbit/api/v1/libraries/8/books", server.takeRequest().target)
+        assertEquals(2, server.requestCount)
+
+        settings = settings.bind(libraries.last())
+        for (config in listOf(first, second)) {
+            for (path in listOf("books/11/cover", "cbz/files/22/pages/0")) {
+                respond("image-bytes")
+                scoped.newCall(Request.Builder().url(config.url(path)).build()).execute().use {
+                    assertEquals("image-bytes", it.body.string())
+                }
+                val sent = server.takeRequest()
+                assertEquals("Bearer $key", sent.headers["Authorization"])
+                assertFalse(sent.target.contains("#"))
+            }
+        }
+        val foreign = first.url("books/11/cover").newBuilder().host("foreign.example").build()
+        assertThrows(ApiFailure::class.java) { scoped.newCall(Request.Builder().url(foreign).build()).execute() }
+        val changed = draft.copy(server = "https://other.example/")
+        settings = settings.copy(draft = changed, discovery = Discovery(changed, 1, libraries, 2)).bind(libraries.first())
+        assertThrows(ApiFailure::class.java) {
+            scoped.newCall(Request.Builder().url(first.url("books/11/cover")).build()).execute()
+        }
+        assertEquals(6, server.requestCount)
     }
 
     @Test fun remappedAndForeignImageUrlsAreBlockedBeforeAnyCredentialIsSent() {

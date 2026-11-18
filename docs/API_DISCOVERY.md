@@ -56,6 +56,12 @@
 
 `primary`는 카드 조립 과정에서 부여될 수 있다. 파일 역할 `primary` 또는 `content`만 읽고, 첨부 파일 역할 및 알 수 없는 역할은 제외한다. 형식은 클라이언트에서 대소문자·앞쪽 점·공백을 정규화한다. 서버의 형식 필터는 DB에 정규화된 소문자 형식을 사용한다. 비정상 DB에 임의의 대문자/확장자를 직접 저장한 경우까지 서버 필터가 보장하지는 않는다.
 
+## 라이브러리 필터 UI 계약 (1.6.2 변경)
+
+- 공식 tachiyomix **1.6.0**, 커밋 `4e1ff5957ae025dc8c9e900cb5d23f9ace5bbadb`의 [`library/src/main/java/eu/kanade/tachiyomi/source/model/Filter.kt`](https://github.com/mihonapp/tachiyomix/blob/4e1ff5957ae025dc8c9e900cb5d23f9ace5bbadb/library/src/main/java/eu/kanade/tachiyomi/source/model/Filter.kt): `Filter.Select`는 표시값 배열과 선택 인덱스를 제공한다. 클라이언트는 인덱스와 함께 라이브러리 ID/binding 스냅샷을 보존한다.
+- 공식 Mihon **v0.21.3**, 커밋 `feadad5e1e2bf638be6e2ca317d11657b09d4596`의 [`app/src/main/java/eu/kanade/tachiyomi/ui/browse/source/browse/BrowseSourceScreen.kt`](https://github.com/mihonapp/mihon/blob/feadad5e1e2bf638be6e2ca317d11657b09d4596/app/src/main/java/eu/kanade/tachiyomi/ui/browse/source/browse/BrowseSourceScreen.kt): Popular는 항상 표시하고, Latest는 `supportsLatest`일 때, Filter는 필터 목록이 비어 있지 않을 때 표시한다. 필터는 기본 선택 패널이며 적용 시 검색 경로로 전달된다. Popular를 누르면 필터를 초기화한다.
+- 새 서버 엔드포인트는 추가하지 않는다. 기존 `GET libraries` 결과를 연결 적용 시 캐시하고, 선택한 ID로 기존 `POST libraries/{libraryId}/books`를 호출한다. 1.6.2 변경의 검증은 합성 응답 기반 로컬 JVM 단위 테스트로 제한하며 실서버/기기 재검증은 하지 않는다.
+
 ## 인증·이미지·재시도
 
 - 비밀번호 로그인/JWT/쿠키 갱신 대신 **서버에서 발급한 읽기 전용 API 키**를 사용한다. 키의 수명은 서버가 관리한다. 401은 만료·폐기·계정/전역 설정 문제이므로 같은 키로 반복 재시도하지 않고 교체를 안내한다. 이 모드에는 refresh token이 없다.

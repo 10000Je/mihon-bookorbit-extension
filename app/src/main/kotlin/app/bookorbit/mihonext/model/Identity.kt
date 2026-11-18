@@ -3,9 +3,10 @@ package app.bookorbit.mihonext.model
 import java.io.IOException
 
 object Identity {
+    const val SOURCE_COUNT = 3
     const val BASE_SLOT_SOURCE_ID = 641_300_700_000L
     fun sourceId(slot: Int): Long {
-        require(slot in 1..6)
+        require(slot in 1..SOURCE_COUNT)
         return BASE_SLOT_SOURCE_ID + slot
     }
 

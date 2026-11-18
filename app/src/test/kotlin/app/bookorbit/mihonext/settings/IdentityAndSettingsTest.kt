@@ -21,7 +21,9 @@ class IdentityAndSettingsTest {
         assertEquals(first.active!!.binding, renamed.active!!.binding)
         assertEquals("New", renamed.active!!.libraryName)
         assertEquals(641_300_700_001L, Identity.sourceId(1))
-        assertEquals(6, (1..6).map(Identity::sourceId).toSet().size)
+        assertEquals(listOf(641_300_700_001L, 641_300_700_002L, 641_300_700_003L),
+            (1..Identity.SOURCE_COUNT).map(Identity::sourceId))
+        assertThrows(IllegalArgumentException::class.java) { Identity.sourceId(4) }
     }
 
     @Test fun serverAccountAndLibraryChangesCannotAttachOldChaptersToNewData() {

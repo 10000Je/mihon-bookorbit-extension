@@ -22,33 +22,36 @@ import java.time.Instant
 
 class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource {
     override val id: Long = Identity.sourceId(slot)
-    override val name: String get() = runCatching { SettingsStore.read(slot).active?.libraryName }.getOrNull()
-        ?.let { "BookOrbit · $it (슬롯 $slot)" } ?: "BookOrbit · 슬롯 $slot"
+    override val name: String = "BookOrbit · 슬롯 $slot"
     override val lang = "all"
     override val supportsLatest = false
     override val baseUrl: String get() = runCatching { SettingsStore.read(slot).active?.server?.trimEnd('/') }
         .getOrNull() ?: "https://bookorbit.invalid"
-    override val client: OkHttpClient by lazy { BookOrbitHttp.client { active() } }
+    override val client: OkHttpClient by lazy {
+        BookOrbitHttp.scopedClient { SettingsStore.read(slot).connectionForImage(it) }
+    }
     override fun headersBuilder(): Headers.Builder = Headers.Builder().add("Accept", "image/*, application/json")
-    override fun getFilterList() = FilterList()
+    override fun getFilterList() = FilterList(LibraryFilter(SettingsStore.read(slot).connections()))
 
     private data class BoundRepository(val connection: Connection, val repository: BookOrbitRepository)
-    @Volatile private var bound: BoundRepository? = null
-    private fun active() = SettingsStore.read(slot).active ?: throw ApiFailure.configuration()
-
-    @Synchronized private fun repository(): BoundRepository {
-        val config = active()
-        return bound?.takeIf { it.connection == config } ?: BoundRepository(
+    private val repositories = LinkedHashMap<String, BoundRepository>(4, 0.75f, true)
+    @Synchronized private fun repository(config: Connection): BoundRepository {
+        return repositories[config.binding]?.takeIf { it.connection == config } ?: BoundRepository(
             config, BookOrbitRepository(config, BookOrbitApi(config, client)),
-        ).also { bound = it }
+        ).also {
+            repositories[config.binding] = it
+            while (repositories.size > 4) repositories.remove(repositories.keys.first())
+        }
     }
 
     override suspend fun getPopularManga(page: Int): MangasPage = catalogue(page, "")
-    override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage = catalogue(page, query)
+    override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
+        catalogue(page, query, filters.filterIsInstance<LibraryFilter>().firstOrNull())
     override suspend fun getLatestUpdates(page: Int): MangasPage = throw UnsupportedOperationException("이 소스는 최신 목록을 지원하지 않습니다. 인기를 사용하세요.")
 
-    private suspend fun catalogue(page: Int, query: String): MangasPage = withContext(Dispatchers.IO) {
-        val current = repository()
+    private suspend fun catalogue(page: Int, query: String, filter: LibraryFilter? = null): MangasPage = withContext(Dispatchers.IO) {
+        val settings = SettingsStore.read(slot)
+        val current = repository(filter?.connection(settings) ?: settings.connection())
         val result = withTimeoutOrNull(90_000) { current.repository.catalogue(page, query) } ?: operationTimeout()
         ensureCurrent(current.connection)
         MangasPage(result.items.map { manga(it, current.connection) }, result.hasNextPage)
@@ -58,7 +61,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
         manga: SManga, chapters: List<SChapter>, fetchDetails: Boolean, fetchChapters: Boolean,
     ): SMangaUpdate = withContext(Dispatchers.IO) {
         if (!fetchDetails && !fetchChapters) return@withContext SMangaUpdate(manga, chapters)
-        val current = repository()
+        val current = repository(SettingsStore.read(slot).connectionForWork(manga.url))
         val work = withTimeoutOrNull(120_000) { current.repository.work(manga.url, fresh = true) } ?: operationTimeout()
         val updated = if (fetchDetails) manga(work.books.first(), current.connection).apply {
             url = manga.url
@@ -86,24 +89,26 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
     }
 
     override suspend fun getPageList(chapter: SChapter): List<Page> = withContext(Dispatchers.IO) {
-        val current = repository()
+        val current = repository(SettingsStore.read(slot).connectionForWork(chapter.url))
         val pages = withTimeoutOrNull(120_000) { current.repository.pages(chapter.url) } ?: operationTimeout()
         ensureCurrent(current.connection)
         pages.mapIndexed { index, url -> Page(index, imageUrl = url) }
     }
 
     override fun getMangaUrl(manga: SManga): String {
-        val config = active()
+        val config = SettingsStore.read(slot).connectionForWork(manga.url)
         val identity = Identity.parse(manga.url, config.binding, config.libraryId)
         return config.server.trimEnd('/') + if (identity.kind == "book") "/book/${identity.id}" else "/series/${identity.id}"
     }
     override fun getChapterUrl(chapter: SChapter): String {
-        val config = active()
+        val config = SettingsStore.read(slot).connectionForWork(chapter.url)
         val identity = Identity.parse(chapter.url, config.binding, config.libraryId)
         return config.server.trimEnd('/') + "/book/${identity.bookId ?: identity.id}"
     }
 
-    override fun setupPreferenceScreen(screen: PreferenceScreen) = SettingsScreen(slot) { bound = null }.setup(screen)
+    override fun setupPreferenceScreen(screen: PreferenceScreen) = SettingsScreen(slot) { clearRepositories() }.setup(screen)
+
+    @Synchronized private fun clearRepositories() = repositories.clear()
 
     private fun manga(book: BookCard, config: Connection): SManga = SManga.create().apply {
         url = Identity.work(config.binding, config.libraryId, if (book.seriesId != null) "series" else "book", book.seriesId ?: book.id)
@@ -115,7 +120,7 @@ class BookOrbitSource(private val slot: Int) : HttpSource(), ConfigurableSource 
     }
 
     private fun ensureCurrent(config: Connection) {
-        if (active() != config) throw ApiFailure(app.bookorbit.mihonext.api.FailureKind.CONFIGURATION,
+        if (SettingsStore.read(slot).connection(config.libraryId, config.binding) != config) throw ApiFailure(app.bookorbit.mihonext.api.FailureKind.CONFIGURATION,
             "조회 중 연결 설정이 변경되었습니다. 다시 불러오세요.")
     }
 

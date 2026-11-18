@@ -17,7 +17,15 @@
 
 공식 호환성 근거: [AGP 8.13](https://developer.android.com/build/releases/past-releases/agp-8-13-0-release-notes), [Kotlin Gradle 호환성](https://kotlinlang.org/docs/gradle-configure-project.html), [tachiyomix 1.6.0](https://github.com/mihonapp/tachiyomix/tree/1.6.0). AGP/호스트 의존성은 최신 유행 버전 대신 실제 빌드·호스트 ABI 검증을 우선했습니다.
 
-## 명령
+## 기본 검증: 단위 테스트만
+
+```sh
+./gradlew :app:testDebugUnitTest
+```
+
+`LiveServerTest`는 기본 작업에서 제외하므로 실서버 설정 환경변수가 있어도 실행되지 않습니다. 에뮬레이터·기기 호출과 APK 빌드·설치·서명 검증은 별도 사용자 요청이 있을 때만 수행합니다. 현재 1.6.2 변경에서는 로컬 JVM 단위 테스트만 실행합니다. 로컬 wrapper URL과 체크섬에 기존 사용자 변경이 있어 캐시된 Gradle 8.14.4를 직접 사용한 내역은 [VERIFICATION.md](VERIFICATION.md)에 기록했습니다.
+
+## 별도 빌드 요청 시 참고 명령
 
 ```sh
 # Android SDK 경로는 각 환경에 맞게 설정
@@ -60,9 +68,9 @@ ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
 
 확장에는 Activity가 없으므로 Android 앱 서랍에서 실행하지 않습니다. Mihon에서 확장을 신뢰 승인한 후 소스 설정을 엽니다. APK 직접 설치가 가능하며, 스토어에서 설치·업데이트하려면 `https://10000je.github.io/mihon-bookorbit-extension/repo.json`을 Mihon 확장 스토어에 추가합니다. BookOrbit 서버 설정은 변경하지 않습니다. [GitHub 배포 절차](GITHUB_PUBLISHING.md)를 참고하세요.
 
-## 선택적 실서버 테스트
+## 과거 실서버 테스트 기록
 
-`LiveServerTest`는 기본 실행에서 서버 설정이 없으면 **명시적으로 skip**합니다. 이 작업에서는 별도 로컬 BookOrbit 3.8.0에 실제로 실행하여 통과했습니다. 이 테스트는 읽기 전용이지만 아래의 원본 fixture 구성을 전제로 하므로 운영 서버를 테스트 대상으로 쓰지 마세요.
+기존 1.6.1은 별도 로컬 BookOrbit 3.8.0에서 `LiveServerTest`를 실행하여 통과했습니다. 현재는 기본 테스트 작업에서 해당 클래스를 **제외**합니다. 실서버 검증을 다시 실행하려면 별도 사용자 요청과 테스트 제외 정책의 명시적 변경이 필요합니다. 다음은 과거 fixture의 형식만 보존한 기록입니다.
 
 저장소 밖 0600 JSON 파일에 다음 필드를 준비합니다. caCertificate는 테스트 TLS 서버의 PEM 인증서이고, libraryIds는 격리 서버의 3개 라이브러리입니다. 로그나 Git에 키를 넣지 않습니다.
 
@@ -70,14 +78,11 @@ ANDROID_HOME=/absolute/path/android-sdk ./scripts/verify-apk.sh \
 {"server":"https://localhost:31443/","apiKey":"REDACTED","caCertificate":"PEM","principalId":1,"libraryIds":[1,2,3]}
 ```
 
-```sh
-BOOKORBIT_LIVE_CONFIG=/absolute/private/live-config.json \
-  ./gradlew :app:testDebugUnitTest --tests '*LiveServerTest'
-```
-
 fixture 구성: 첫 라이브러리에 EPUB 전용 작품, CBZ 시리즈, 실제 RAR 기반 CBR 시리즈, 실제 7z 기반 CB7 시리즈, EPUB+CBZ 혼합 작품, 비시리즈 CBZ 도서. 다른 두 라이브러리에 각각 CBZ 작품 하나. 각 만화는 원본 생성 PNG 3장을 포함합니다. 테스트는 EPUB 검색 제외, 총 7작품, 각 챕터와 페이지 수, 21개 PNG 실제 바이트, 인증된 표지를 확인합니다. 잘못된 TLS 구현으로 시험을 통과시키지 않으며 신뢰 인증서는 테스트 클라이언트에만 추가합니다. 프로덕션 소스는 기본 TLS 검증을 유지합니다.
 
-## 산출물
+## 과거 1.6.1 산출물 및 현재 단위 테스트 보고서
+
+1.6.2 변경의 새 APK는 생성하지 않았습니다. 아래 APK·서명·Lint 기록은 기존 1.6.1 기준입니다.
 
 - 설치용 release: `artifacts/bookorbit-independent-1.6.1-release.apk`
 - 개발용 debug: `artifacts/bookorbit-independent-1.6.1-debug.apk`
